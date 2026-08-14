@@ -1,0 +1,4 @@
+# EduNexus local scratch & logs
+scratch/
+*.log
+.DS_Store

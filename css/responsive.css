@@ -1,0 +1,74 @@
+/* ============================================================
+   EDUNEXUS — RESPONSIVE & MOBILE WEBVIEW OVERRIDES
+   ============================================================ */
+
+/* Tablet (Under 992px) */
+@media (max-width: 992px) {
+  :root {
+    --sidebar-width: 220px;
+  }
+  
+  .page-body {
+    padding: 1.25rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid-3, .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile Devices (Under 768px) */
+@media (max-width: 768px) {
+  .app-sidebar {
+    transform: translateX(-100%);
+    width: 260px !important;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .app-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .app-main {
+    margin-left: 0 !important;
+  }
+
+  .app-header {
+    padding: 0 1rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-2, .grid-3, .grid-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-container {
+    max-width: 95%;
+  }
+
+  .toast-container {
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+  }
+  
+  .toast {
+    min-width: 100%;
+  }
+
+  .cursor-spotlight {
+    display: none !important;
+  }
+
+  /* Ensure touch targets are at least 44x44px for Android WebView */
+  .btn, .nav-item, .quiz-option-btn, .form-control {
+    min-height: 44px;
+  }
+}

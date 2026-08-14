@@ -1,0 +1,151 @@
+/* ============================================================
+   EDUNEXUS — KEYFRAME ANIMATIONS & EFFECTS
+   ============================================================ */
+
+/* Cursor Spotlight Radial Overlay */
+.cursor-spotlight {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, rgba(139, 92, 246, 0.03) 50%, transparent 70%);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  transition: opacity 0.3s ease;
+}
+
+/* Floating Animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(1deg); }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Pulse Glow */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(6, 182, 212, 0.5); }
+}
+.animate-pulse-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+/* Fade Scale In */
+@keyframes fadeScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fadeScaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Loading Spinner */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--accent-cyan);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Magnetic Logo Hover & Letter Scaling */
+.brand-letter {
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
+  cursor: pointer;
+}
+
+/* Splash Screen Overlay */
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+.splash-screen.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Student Reading Book Character Animation */
+@keyframes walkAndRead {
+  0% {
+    transform: translateX(0px) scaleX(1);
+  }
+  42% {
+    transform: translateX(240px) scaleX(1) rotate(0deg);
+  }
+  46% {
+    transform: translateX(240px) scaleX(1) rotate(180deg);
+  }
+  50% {
+    transform: translateX(240px) scaleX(1) rotate(360deg);
+  }
+  51% {
+    transform: translateX(240px) scaleX(-1);
+  }
+  92% {
+    transform: translateX(0px) scaleX(-1) rotate(0deg);
+  }
+  96% {
+    transform: translateX(0px) scaleX(-1) rotate(180deg);
+  }
+  100% {
+    transform: translateX(0px) scaleX(1) rotate(360deg);
+  }
+}
+
+.reading-student-character {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  animation: walkAndRead 12s ease-in-out infinite;
+  user-select: none;
+}
+
+.reading-student-avatar {
+  width: 40px;
+  height: 40px;
+  background: var(--gradient-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
+}
+
+/* Learning Path Node Pulse */
+@keyframes nodePulse {
+  0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(6, 182, 212, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+}
+.node-active {
+  animation: nodePulse 2s infinite;
+}
