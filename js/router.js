@@ -4,6 +4,10 @@
 
 class SPARouter {
   constructor() {
+    this.authMode = 'signin'; // 'signin' or 'signup'
+    this.currentRoleTab = 'student'; // 'student', 'teacher', 'admin'
+    this.showPassword = false;
+
     this.routes = {
       '/login': { role: null, handler: () => this.renderAuthView('login') },
       '/register': { role: null, handler: () => this.renderAuthView('register') },
@@ -49,9 +53,10 @@ class SPARouter {
     const route = this.routes[path] || this.routes['/login'];
     const user = Auth.getCurrentUser();
 
-    // 1. Auth Guard
+    // 1. Auth Guard & Back-Button Protection
     if (route.role && route.role !== 'all') {
       if (!user) {
+        Notifications.toast('Session expired or logged out. Please sign in.', 'warning');
         this.navigate('/login');
         return;
       }
@@ -62,6 +67,9 @@ class SPARouter {
       }
     }
 
+    // Dismiss any open header dropdown on route change
+    if (window.App) App.closeProfileDropdown();
+
     // 2. Hide / Show Shell Containers
     const authWrapper = document.getElementById('auth-view-wrapper');
     const appShell = document.getElementById('app-shell');
@@ -71,7 +79,7 @@ class SPARouter {
         this.navigate(`/${user.role.toLowerCase()}`);
         return;
       }
-      if (authWrapper) authWrapper.style.display = 'flex';
+      if (authWrapper) authWrapper.style.display = 'block';
       if (appShell) appShell.style.display = 'none';
       route.handler();
     } else {
@@ -92,7 +100,6 @@ class SPARouter {
   updateSidebarUI(user, activePath) {
     if (!user) return;
 
-    // Sidebar navigation menu per role
     const navEl = document.getElementById('sidebar-nav-items');
     if (!navEl) return;
 
@@ -102,7 +109,7 @@ class SPARouter {
         { path: '/student', label: 'Dashboard', icon: '🏠' },
         { path: '/subjects', label: 'My Subjects', icon: '📚' },
         { path: '/learning-path', label: 'Learning Path', icon: '🛣️' },
-        { path: '/progress', label: 'My Progress', icon: '📊' },
+        { path: '/progress', label: 'Academic Progress', icon: '📊' },
         { path: '/achievements', label: 'Achievements', icon: '🏆' },
         { path: '/settings', label: 'Settings', icon: '⚙️' }
       ];
@@ -131,7 +138,6 @@ class SPARouter {
 
     navEl.innerHTML = navHtml;
 
-    // User Footer
     const userNameEl = document.getElementById('sidebar-user-name');
     const userRoleEl = document.getElementById('sidebar-user-role');
     const userAvatarEl = document.getElementById('sidebar-user-avatar');
@@ -144,163 +150,233 @@ class SPARouter {
   updateHeaderUI(user, path) {
     const welcomeEl = document.getElementById('header-welcome-text');
     if (welcomeEl && user) {
-      welcomeEl.innerHTML = `Good morning, <strong>${user.name}</strong> 👋`;
+      const name = user.name.split(' ')[0];
+      welcomeEl.innerHTML = `Good morning, <strong>${name}</strong> <span class="wave-hand">👋</span>`;
     }
   }
 
-  renderAuthView(mode = 'login') {
-    const container = document.getElementById('auth-view-container');
+  renderAuthView(animateType = 'entrance') {
+    const container = document.getElementById('auth-view-wrapper');
     if (!container) return;
 
-    if (mode === 'login') {
-      container.innerHTML = `
-        <div class="auth-card animate-fade-in">
-          <div class="auth-brand">
-            <img src="assets/logo.svg" alt="EduNexus Logo" class="magnetic-target">
-            <p class="auth-subtitle">Learn at your pace. Grow with AI.</p>
-          </div>
+    let animClass = 'form-animate-entrance';
+    if (animateType === 'tab') animClass = 'form-animate-tab';
+    if (animateType === 'role') animClass = 'form-animate-role';
 
-          <div class="role-tabs">
-            <button class="role-tab active" data-role="student" onclick="Router.setRoleTab('student')">STUDENT</button>
-            <button class="role-tab" data-role="teacher" onclick="Router.setRoleTab('teacher')">TEACHER</button>
-            <button class="role-tab" data-role="admin" onclick="Router.setRoleTab('admin')">ADMIN</button>
-          </div>
-
-          <form id="login-form" onsubmit="event.preventDefault(); Router.handleLoginSubmit();">
-            <div class="form-group">
-              <label class="form-label">User ID / Roll Number</label>
-              <input type="text" id="login-user-id" class="form-control" placeholder="e.g. ECB0245 or ADMIN001" required value="ECB0245">
+    container.innerHTML = `
+      <div class="auth-split-wrapper">
+        <!-- LEFT PANEL: PROTECTED SAAS FORM (44%) -->
+        <div class="auth-left-panel">
+          <div class="auth-left-content ${animClass}">
+            <!-- Brand Logo -->
+            <div class="auth-header-logo">
+              <img src="assets/logo.png" alt="EduNexus — Personalized Learning Platform" class="edunexus-logo-img auth-logo-img">
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Password</label>
-              <input type="password" id="login-password" class="form-control" placeholder="Enter password" required value="student123">
+            <!-- Welcome Message -->
+            <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 0.25rem;">
+              ${this.authMode === 'signin' ? 'Welcome Back 👋' : 'Create Account 🚀'}
+            </h2>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+              ${this.authMode === 'signin' ? 'AI-Powered Personalized Learning Platform.' : 'Start your adaptive learning journey today.'}
+            </p>
+
+            <!-- Segmented Control: Sign In / Create Account -->
+            <div class="segmented-control">
+              <button class="segmented-tab ${this.authMode === 'signin' ? 'active' : ''}" onclick="Router.setAuthMode('signin')">Sign In</button>
+              <button class="segmented-tab ${this.authMode === 'signup' ? 'active' : ''}" onclick="Router.setAuthMode('signup')">Create Account</button>
             </div>
 
-            <div style="text-align: right; margin-bottom: 1.25rem;">
-              <a class="auth-link text-xs" onclick="Notifications.toast('Please contact your institution administrator to reset your credentials.', 'warning', 4500)">Forgot Password?</a>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-full btn-lg">LOGIN &rarr;</button>
-          </form>
-
-          <div class="auth-footer-text">
-            <span id="reg-link-student">New Student? <a class="auth-link" onclick="Router.navigate('/register')">Create Account</a></span>
-            <span id="reg-link-teacher" class="hidden">New Teacher? <a class="auth-link" onclick="Router.navigate('/register?role=teacher')">Create Account</a></span>
-          </div>
-        </div>
-      `;
-    } else {
-      // Registration View
-      const isTeacher = window.location.hash.includes('role=teacher');
-      container.innerHTML = `
-        <div class="auth-card animate-fade-in" style="max-width: 480px;">
-          <div class="auth-brand">
-            <img src="assets/logo.svg" alt="EduNexus Logo">
-            <h3 style="font-size: 1.2rem; font-weight: 700; margin-top: 0.5rem;">${isTeacher ? 'Teacher Registration' : 'Student Registration'}</h3>
-          </div>
-
-          <form id="register-form" onsubmit="event.preventDefault(); Router.handleRegisterSubmit(${isTeacher});">
-            <div class="form-group">
-              <label class="form-label">Full Name</label>
-              <input type="text" id="reg-name" class="form-control" placeholder="e.g. Ashish Swami" required>
-            </div>
-
-            <div class="grid grid-2 gap-2">
-              <div class="form-group">
-                <label class="form-label">School Code</label>
-                <input type="text" id="reg-school" class="form-control" value="ECB" required>
+            <!-- Role Selector -->
+            <div style="margin-bottom: 1.25rem;">
+              <span class="text-xs text-secondary font-bold" style="display: block; margin-bottom: 0.35rem;">CONTINUE AS</span>
+              <div class="role-tabs">
+                <button class="role-tab ${this.currentRoleTab === 'student' ? 'active' : ''}" onclick="Router.setRoleTab('student')">Student</button>
+                <button class="role-tab ${this.currentRoleTab === 'teacher' ? 'active' : ''}" onclick="Router.setRoleTab('teacher')">Teacher</button>
+                <button class="role-tab ${this.currentRoleTab === 'admin' ? 'active' : ''}" onclick="Router.setRoleTab('admin')">Admin</button>
               </div>
-              ${isTeacher ? `
-                <div class="form-group">
-                  <label class="form-label">Mobile Number</label>
-                  <input type="text" id="reg-mobile" class="form-control" placeholder="10-digit number" required>
-                </div>
-              ` : `
-                <div class="form-group">
-                  <label class="form-label">Roll Number</label>
-                  <input type="text" id="reg-roll" class="form-control" placeholder="e.g. 0248" required>
-                </div>
-              `}
             </div>
 
-            ${isTeacher ? `
-              <div class="form-group">
-                <label class="form-label">Subject</label>
-                <input type="text" id="reg-subject" class="form-control" value="Mathematics" required>
-              </div>
+            <!-- SIGN IN FORM -->
+            ${this.authMode === 'signin' ? `
+              <form id="login-form" onsubmit="event.preventDefault(); Router.handleLoginSubmit();">
+                <div class="form-group">
+                  <label class="form-label">${this.currentRoleTab.toUpperCase()} ID</label>
+                  <input type="text" id="login-user-id" class="form-control" placeholder="e.g. ECB0245 or ADMIN001" required value="${this.getDefaultUserId()}">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Password</label>
+                  <div class="password-input-wrapper">
+                    <input type="${this.showPassword ? 'text' : 'password'}" id="login-password" class="form-control" placeholder="Enter password" required value="${this.getDefaultPassword()}">
+                    <button type="button" class="password-toggle-btn" onclick="Router.togglePasswordVisibility()">
+                      ${this.showPassword ? '👁️‍🗨️' : '👁️'}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs" style="margin-bottom: 1.25rem;">
+                  <label class="flex items-center gap-1 cursor-pointer">
+                    <input type="checkbox" checked> Remember me
+                  </label>
+                  <a class="auth-link" onclick="Notifications.toast('Please contact your institution administrator to reset your password.', 'warning', 4500)">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-full btn-lg">
+                  Sign In <span style="transition: transform 0.2s;" class="btn-arrow">&rarr;</span>
+                </button>
+              </form>
             ` : `
-              <div class="form-group">
-                <label class="form-label">Class</label>
-                <select id="reg-class" class="form-control form-select">
-                  <option value="10-A">Class 10-A</option>
-                  <option value="10-B">Class 10-B</option>
-                  <option value="11-A">Class 11-A</option>
-                </select>
-              </div>
+              <!-- CREATE ACCOUNT FORM -->
+              <form id="register-form" onsubmit="event.preventDefault(); Router.handleRegisterSubmit();">
+                <div class="form-group">
+                  <label class="form-label">Full Name</label>
+                  <input type="text" id="reg-name" class="form-control" placeholder="e.g. Ashish Swami" required>
+                </div>
+
+                <div class="grid grid-2 gap-2">
+                  <div class="form-group">
+                    <label class="form-label">Institution Code</label>
+                    <input type="text" id="reg-school" class="form-control" value="ECB" required onkeyup="Router.updateGeneratedId()">
+                  </div>
+                  ${this.currentRoleTab === 'teacher' ? `
+                    <div class="form-group">
+                      <label class="form-label">Mobile Number</label>
+                      <input type="text" id="reg-mobile" class="form-control" placeholder="98761234" required onkeyup="Router.updateGeneratedId()">
+                    </div>
+                  ` : `
+                    <div class="form-group">
+                      <label class="form-label">Student ID / Roll</label>
+                      <input type="text" id="reg-roll" class="form-control" placeholder="0245" value="0248" required onkeyup="Router.updateGeneratedId()">
+                    </div>
+                  `}
+                </div>
+
+                <div style="padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.8rem; color: var(--accent-cyan);">
+                  Generated ${this.currentRoleTab.toUpperCase()} ID: <strong id="generated-id-preview">ECB0248</strong>
+                </div>
+
+                <div class="grid grid-2 gap-2">
+                  <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="reg-pass" class="form-control" required value="student123">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" id="reg-confirm" class="form-control" required value="student123">
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-full btn-lg" style="margin-top: 0.5rem;">CREATE ACCOUNT</button>
+              </form>
             `}
-
-            <div class="grid grid-2 gap-2">
-              <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" id="reg-pass" class="form-control" required>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Confirm Password</label>
-                <input type="password" id="reg-confirm" class="form-control" required>
-              </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-full btn-lg" style="margin-top: 1rem;">CREATE ACCOUNT</button>
-          </form>
-
-          <div class="auth-footer-text">
-            Already registered? <a class="auth-link" onclick="Router.navigate('/login')">Log In</a>
           </div>
         </div>
-      `;
+
+        <!-- RIGHT PANEL: CLEAN UN-OBSCURED CANVAS (56%) -->
+        <div class="auth-right-panel">
+          <!-- ZONE 1: BACKGROUND DECORATIONS (z-index: 0) -->
+          <div class="background-decoration-zone">
+            <div class="right-panel-blob right-panel-blob-1"></div>
+            <div class="right-panel-blob right-panel-blob-2"></div>
+          </div>
+
+          <!-- ZONE 2: BACKGROUND TEXT ZONE (z-index: 1) — STATIC FAINT TYPOGRAPHY -->
+          <div class="background-text-zone">
+            <span class="bg-text-item bg-text-top-left">LEARN</span>
+            <span class="bg-text-item bg-text-top-right">ADAPT</span>
+            <span class="bg-text-item bg-text-bottom-right">GROW</span>
+          </div>
+
+          <!-- ZONE 3: HERO INTERACTION ZONE & CENTER HERO GRAPHIC (z-index: 2) -->
+          <div class="hero-interaction-zone">
+            <!-- UN-OBSCURED CENTERED HERO GRAPHIC (z-index: 2) -->
+            <div class="center-hero-zone">
+              <div style="font-size: 5rem; filter: drop-shadow(0 0 24px rgba(6,182,212,0.4)); margin-bottom: 0.5rem;">
+                💻 🎓 🧠
+              </div>
+              <h3 style="font-size: 1.5rem; font-weight: 800; color: #F8FAFC; margin-bottom: 0.35rem;">
+                Learning That Adapts To You.
+              </h3>
+              <p class="text-xs text-secondary" style="max-width: 280px; margin: 0 auto; line-height: 1.5;">
+                Prerequisite gap detection & early intervention platform for personalized learning.
+              </p>
+            </div>
+          </div>
+
+          <!-- ZONE 4: BOTTOM-CENTER FIXED ACTIVE LEARNER STUDY CHARACTER CARD (z-index: 3) -->
+          <div class="study-character-zone">
+            <div class="study-ai-popup">✦ Concept Mastered</div>
+            <div class="study-avatar-container">
+              👨‍🎓
+            </div>
+            <div class="study-info-box">
+              <span style="font-size: 0.875rem; font-weight: 700; color: #F8FAFC;">Active Student</span>
+              <span style="font-size: 0.75rem; color: var(--text-secondary);">📖 Reading DBMS 2NF Rules</span>
+              <span style="font-size: 0.725rem; color: var(--accent-cyan); font-weight: 600;">💻 Real-time AI Sync Active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (window.Animations) {
+      Animations.initMagneticElements();
     }
+  }
+
+  setAuthMode(mode) {
+    this.authMode = mode;
+    this.renderAuthView('tab');
   }
 
   setRoleTab(role) {
     this.currentRoleTab = role;
-    document.querySelectorAll('.role-tab').forEach(tab => {
-      if (tab.getAttribute('data-role') === role) {
-        tab.classList.add('active');
-      } else {
-        tab.classList.remove('active');
-      }
-    });
+    this.renderAuthView('role');
+  }
 
-    const userField = document.getElementById('login-user-id');
-    const passField = document.getElementById('login-password');
-    const regStudentLink = document.getElementById('reg-link-student');
-    const regTeacherLink = document.getElementById('reg-link-teacher');
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+    const input = document.getElementById('login-password');
+    if (input) {
+      input.type = this.showPassword ? 'text' : 'password';
+    }
+  }
 
-    if (role === 'student') {
-      if (userField) userField.value = 'ECB0245';
-      if (passField) passField.value = 'student123';
-      if (regStudentLink) regStudentLink.classList.remove('hidden');
-      if (regTeacherLink) regTeacherLink.classList.add('hidden');
-    } else if (role === 'teacher') {
-      if (userField) userField.value = 'ECB1234';
-      if (passField) passField.value = 'teacher123';
-      if (regStudentLink) regStudentLink.classList.add('hidden');
-      if (regTeacherLink) regTeacherLink.classList.remove('hidden');
-    } else if (role === 'admin') {
-      if (userField) userField.value = 'ADMIN001';
-      if (passField) passField.value = 'admin123';
-      if (regStudentLink) regStudentLink.classList.add('hidden');
-      if (regTeacherLink) regTeacherLink.classList.add('hidden');
+  getDefaultUserId() {
+    if (this.currentRoleTab === 'student') return 'ECB0245';
+    if (this.currentRoleTab === 'teacher') return 'ECB1234';
+    if (this.currentRoleTab === 'admin') return 'ADMIN001';
+    return '';
+  }
+
+  getDefaultPassword() {
+    if (this.currentRoleTab === 'student') return 'student123';
+    if (this.currentRoleTab === 'teacher') return 'teacher123';
+    if (this.currentRoleTab === 'admin') return 'admin123';
+    return '';
+  }
+
+  updateGeneratedId() {
+    const school = document.getElementById('reg-school')?.value || 'ECB';
+    const preview = document.getElementById('generated-id-preview');
+    if (!preview) return;
+
+    if (this.currentRoleTab === 'teacher') {
+      const mobile = document.getElementById('reg-mobile')?.value || '1234';
+      const last4 = mobile.slice(-4);
+      preview.textContent = `${school.toUpperCase()}${last4}`;
+    } else {
+      const roll = document.getElementById('reg-roll')?.value || '0245';
+      preview.textContent = `${school.toUpperCase()}${roll.padStart(4, '0')}`;
     }
   }
 
   handleLoginSubmit() {
-    const role = document.querySelector('.role-tab.active')?.getAttribute('data-role') || 'student';
     const userId = document.getElementById('login-user-id').value;
     const password = document.getElementById('login-password').value;
 
-    const res = Auth.login(role, userId, password);
+    const res = Auth.login(this.currentRoleTab, userId, password);
     if (res.success) {
       Notifications.toast(`Welcome back, ${res.user.name}!`, 'success');
       this.navigate(`/${res.user.role.toLowerCase()}`);
@@ -309,32 +385,32 @@ class SPARouter {
     }
   }
 
-  handleRegisterSubmit(isTeacher = false) {
+  handleRegisterSubmit() {
     const name = document.getElementById('reg-name').value;
     const school = document.getElementById('reg-school').value;
     const pass = document.getElementById('reg-pass').value;
     const confirm = document.getElementById('reg-confirm').value;
 
     let res;
-    if (isTeacher) {
+    if (this.currentRoleTab === 'teacher') {
       const mobile = document.getElementById('reg-mobile').value;
-      const subject = document.getElementById('reg-subject').value;
+      const subject = 'Database Management Systems';
       res = Auth.registerTeacher({ fullName: name, schoolCode: school, mobileNumber: mobile, subject, password: pass, confirmPassword: confirm });
     } else {
       const roll = document.getElementById('reg-roll').value;
-      const classId = document.getElementById('reg-class').value;
+      const classId = 'Sec-A';
       res = Auth.registerStudent({ fullName: name, schoolCode: school, rollNumber: roll, classId, password: pass, confirmPassword: confirm });
     }
 
     if (res.success) {
-      Notifications.toast(`Account ${res.id} created! Please login.`, 'success');
-      this.navigate('/login');
+      Notifications.toast(`Account ${res.id} created! Please sign in.`, 'success');
+      this.setAuthMode('signin');
     } else {
       Notifications.toast(res.message, 'error');
     }
   }
 
-  renderQuizView(container, topicId = 'TOP_FACT') {
+  renderQuizView(container, topicId = 'TOP_DBMS_NORM') {
     const started = Quiz.startQuiz(topicId);
     if (!started) return;
 
@@ -360,10 +436,11 @@ class SPARouter {
     });
 
     const html = `
-      <div class="quiz-container animate-fade-in">
+      <div class="quiz-container quiz-slide-in">
         <div class="quiz-header">
           <div>
-            <h3 style="font-weight: 700; font-size: 1.2rem;">${qData.topicName} Quiz</h3>
+            <span class="badge badge-cyan">Diagnostic Evaluation</span>
+            <h3 style="font-weight: 700; font-size: 1.2rem; margin-top: 0.2rem;">${qData.topicName}</h3>
             <span class="text-xs text-secondary">Question ${currentQNum} of ${totalQ}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-tertiary); padding: 0.4rem 0.85rem; border-radius: var(--radius-full); font-weight: 700;">
@@ -386,7 +463,7 @@ class SPARouter {
           <button class="btn btn-secondary" ${Quiz.currentIndex === 0 ? 'disabled' : ''} onclick="Quiz.previousQuestion(); Router.renderQuizStep(document.getElementById('page-body-container'));">&larr; Previous</button>
           
           ${currentQNum === totalQ ? `
-            <button class="btn btn-primary" onclick="Router.handleQuizSubmit()">SUBMIT QUIZ &rarr;</button>
+            <button class="btn btn-primary" onclick="Router.handleQuizSubmit()">SUBMIT EVALUATION &rarr;</button>
           ` : `
             <button class="btn btn-primary" onclick="Quiz.nextQuestion(); Router.renderQuizStep(document.getElementById('page-body-container'));">Next &rarr;</button>
           `}
@@ -405,13 +482,14 @@ class SPARouter {
     const body = `
       <div style="text-align: center; padding: 1rem 0;">
         <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">${res.score >= 70 ? '🎉' : '⚠️'}</div>
-        <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.35rem;">Quiz Score: ${res.score}%</h3>
+        <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.35rem;">EVALUATION COMPLETE</h3>
+        <p style="font-size: 2.2rem; font-weight: 800; color: var(--accent-cyan);" id="quiz-score-counter-el">0%</p>
         <p class="text-sm text-secondary" style="margin-bottom: 1.5rem;">
           ${res.correctCount} out of ${res.totalQuestions} questions answered correctly.
         </p>
 
         <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md); text-align: left;">
-          <h4 style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 0.35rem;">✦ EduNexus AI Analysis</h4>
+          <h4 style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 0.35rem;"><span class="ai-sparkle-icon">✦</span> EduNexus AI Analysis</h4>
           <p style="font-size: 0.85rem; color: var(--text-primary);">
             ${res.score < 50 ? `Learning gap detected in ${res.topicName}. Prerequisite revision path updated.` : `Great job! Mastery in ${res.topicName} updated.`}
           </p>
@@ -424,15 +502,19 @@ class SPARouter {
     `;
 
     Notifications.openModal('Quiz Result & AI Evaluation', body, footer);
+
+    setTimeout(() => {
+      Animations.animateCountUp(document.getElementById('quiz-score-counter-el'), res.score, 1000, '%');
+    }, 150);
   }
 
   renderLearningPathView(container) {
     const user = Auth.getCurrentUser();
     container.innerHTML = `
-      <div class="animate-fade-in">
+      <div class="stagger-section stagger-1">
         <div style="margin-bottom: 1.5rem;">
           <h2 style="font-size: 1.5rem; font-weight: 800;">Personalized Learning Path</h2>
-          <p class="text-sm text-secondary">AI-generated sequence designed for optimal prerequisite recovery and topic mastery.</p>
+          <p class="text-sm text-secondary">AI-generated sequence designed for prerequisite recovery and topic mastery.</p>
         </div>
         <div id="path-visualizer-target"></div>
       </div>
@@ -443,25 +525,25 @@ class SPARouter {
   renderSettingsView(container) {
     const user = Auth.getCurrentUser();
     let html = `
-      <div class="animate-fade-in">
+      <div class="stagger-section stagger-1">
         <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem;">Settings & Preferences</h2>
         <div class="card" style="margin-bottom: 1.5rem;">
           <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">Theme Configuration</h3>
           <div style="display: flex; align-items: center; gap: 1rem;">
-            <button class="btn btn-outline" onclick="Router.toggleTheme('dark')">🌙 Dark Mode</button>
+            <button class="btn btn-outline" onclick="Router.toggleTheme('dark')">🌙 Night Mode</button>
             <button class="btn btn-secondary" onclick="Router.toggleTheme('light')">☀ Light Mode</button>
           </div>
         </div>
 
         <div class="card" style="margin-bottom: 1.5rem;">
-          <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">Account Details</h3>
-          <p class="text-sm text-secondary">ID: ${user?.id} • Role: ${user?.role.toUpperCase()}</p>
+          <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">Account Profile</h3>
+          <p class="text-sm text-secondary">ID: ${user?.id} • Role: ${user?.role.toUpperCase()} • Course: ${user?.branch || 'Computer Science'}</p>
         </div>
 
         <div class="card" style="border-color: rgba(239, 68, 68, 0.3);">
-          <h3 style="font-size: 1.1rem; font-weight: 700; color: #F87171; margin-bottom: 0.5rem;">Developer / Demo Reset</h3>
-          <p class="text-sm text-secondary" style="margin-bottom: 1rem;">Reset LocalStorage data back to original SIH presentation demo state.</p>
-          <button class="btn btn-danger" onclick="Router.confirmResetDemoData()">RESET DEMO DATA</button>
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: #F87171; margin-bottom: 0.5rem;">Platform Reset</h3>
+          <p class="text-sm text-secondary" style="margin-bottom: 1rem;">Reset LocalStorage data back to default state.</p>
+          <button class="btn btn-danger" onclick="Router.confirmResetDemoData()">RESET PLATFORM STATE</button>
         </div>
       </div>
     `;
@@ -474,12 +556,12 @@ class SPARouter {
   }
 
   confirmResetDemoData() {
-    const body = `<p>Reset all local storage prototype data to initial demo state?</p>`;
+    const body = `<p>Reset all local storage data to initial state?</p>`;
     const footer = `
       <button class="btn btn-secondary" onclick="Notifications.closeModal()">Cancel</button>
-      <button class="btn btn-danger" onclick="Storage.resetDemoData(); Notifications.closeModal(); Auth.logout(); Notifications.toast('Demo data reset successfully.', 'success');">Confirm Reset</button>
+      <button class="btn btn-danger" onclick="Storage.resetDemoData(); Notifications.closeModal(); Auth.logout(); Notifications.toast('Platform state reset successfully.', 'success');">Confirm Reset</button>
     `;
-    Notifications.openModal('Reset Demo Data', body, footer);
+    Notifications.openModal('Reset Platform State', body, footer);
   }
 }
 

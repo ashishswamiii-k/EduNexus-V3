@@ -1,35 +1,79 @@
 /* ============================================================
-   EDUNEXUS — MASTER APPLICATION ENTRYPOINT & INITIALIZER
+   EDUNEXUS — MASTER APPLICATION INITIALIZER
    ============================================================ */
 
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('EduNexus Platform Initializing...');
+class AppController {
+  constructor() {
+    this.init();
+  }
 
-  // 1. Splash Screen Transition
-  setTimeout(() => {
-    const splash = document.getElementById('splash-screen');
-    if (splash) {
-      splash.classList.add('fade-out');
-      setTimeout(() => {
-        splash.style.display = 'none';
-      }, 500);
+  init() {
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Initialize Local Storage Database
+      Storage.init();
+
+      // 2. Initial SPA Route Resolution
+      Router.handleRouting();
+
+      // 3. Bind Keyboard Accessibility & Click Outside Listeners
+      this.bindEventListeners();
+
+      // 4. Initialize Splash Screen Entrance
+      this.initSplashScreen();
+    });
+  }
+
+  initSplashScreen() {
+    setTimeout(() => {
+      const splash = document.getElementById('edunexus-splash-screen');
+      if (splash) {
+        splash.classList.add('fade-out');
+        setTimeout(() => splash.remove(), 600);
+      }
+    }, 750);
+  }
+
+  toggleSidebar() {
+    const sidebar = document.getElementById('sidebar-container');
+    if (sidebar) {
+      sidebar.classList.toggle('collapsed');
+      sidebar.classList.toggle('mobile-open');
     }
-  }, 1200);
+  }
 
-  // 2. Initialize Routing
-  Router.handleRouting();
+  toggleProfileDropdown() {
+    const dropdown = document.getElementById('header-profile-dropdown');
+    if (dropdown) {
+      dropdown.classList.toggle('show');
+    }
+  }
 
-  // 3. Sidebar Toggle Listener
-  const toggleBtn = document.getElementById('sidebar-toggle');
-  const sidebar = document.getElementById('app-sidebar');
+  closeProfileDropdown() {
+    const dropdown = document.getElementById('header-profile-dropdown');
+    if (dropdown) {
+      dropdown.classList.remove('show');
+    }
+  }
 
-  if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener('click', () => {
-      if (window.innerWidth < 768) {
-        sidebar.classList.toggle('mobile-open');
-      } else {
-        sidebar.classList.toggle('collapsed');
+  bindEventListeners() {
+    window.addEventListener('keydown', (e) => {
+      // ESC key closes active modal & dropdown
+      if (e.key === 'Escape') {
+        Notifications.closeModal();
+        this.closeProfileDropdown();
+      }
+    });
+
+    // Dismiss dropdown on outside click
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('header-profile-dropdown');
+      const profileBtn = e.target.closest('.header-actions');
+      if (dropdown && dropdown.classList.contains('show') && !profileBtn) {
+        this.closeProfileDropdown();
       }
     });
   }
-});
+}
+
+const App = new AppController();
+window.App = App;

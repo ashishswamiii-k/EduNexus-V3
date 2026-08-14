@@ -2,112 +2,124 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>EduNexus — AI-Powered Personalized Learning & Early Intervention Platform</title>
-
-  <!-- External & System Stylesheets -->
-  <link rel="stylesheet" href="./css/global.css">
-  <link rel="stylesheet" href="./css/components.css">
-  <link rel="stylesheet" href="./css/animations.css">
-  <link rel="stylesheet" href="./css/auth.css">
-  <link rel="stylesheet" href="./css/dashboard.css">
-  <link rel="stylesheet" href="./css/responsive.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduNexus — AI-Powered Personalized Learning & Early Intervention</title>
+  
+  <!-- Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet System -->
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
 
-  <!-- ============================================================
-       1. APPLICATION LOADING SPLASH SCREEN
-       ============================================================ -->
-  <div id="splash-screen" class="splash-screen">
-    <div style="text-align: center;" class="animate-pulse-glow">
-      <img src="./assets/logo.svg" alt="EduNexus Logo" style="height: 64px; width: auto; margin-bottom: 1.5rem;">
-      <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem;">
-        <div class="spinner"></div>
-        <span style="font-size: 0.9rem; color: var(--text-secondary); font-weight: 600; letter-spacing: 1px;">
-          PERSONALIZED LEARNING • POWERED BY AI
-        </span>
-      </div>
+  <!-- SPLASH ENTRANCE SCREEN -->
+  <div id="edunexus-splash-screen" class="splash-screen-overlay">
+    <div class="splash-logo-wrapper">
+      <img src="assets/logo.png" alt="EduNexus — Personalized Learning Platform" class="splash-logo-img">
     </div>
   </div>
 
-  <!-- ============================================================
-       2. AUTHENTICATION CONTAINER (LOGIN & REGISTER)
-       ============================================================ -->
-  <div id="auth-view-wrapper" class="auth-wrapper">
-    <div class="auth-bg-blob auth-bg-blob-1"></div>
-    <div class="auth-bg-blob auth-bg-blob-2"></div>
-    
-    <div id="auth-view-container" class="w-full flex justify-center">
-      <!-- Injected dynamically by router.js -->
-    </div>
-  </div>
+  <!-- SPA AUTHENTICATION VIEW WRAPPER -->
+  <div id="auth-view-wrapper" style="display: block;"></div>
 
-  <!-- ============================================================
-       3. MAIN APPLICATION DASHBOARD SHELL
-       ============================================================ -->
+  <!-- SPA APPLICATION SHELL (SIDEBAR & HEADER) -->
   <div id="app-shell" class="app-container" style="display: none;">
-    
-    <!-- Sidebar Navigation -->
-    <aside id="app-sidebar" class="app-sidebar">
+    <!-- COLLAPSIBLE SIDEBAR WITH PERMANENT FOOTER -->
+    <aside id="sidebar-container" class="app-sidebar">
       <div class="sidebar-header">
-        <a class="sidebar-brand magnetic-target">
-          <img src="./assets/logo.svg" alt="EduNexus">
+        <a class="sidebar-brand magnetic-target" onclick="Router.navigate('/student')" title="EduNexus">
+          <img src="assets/logo.png" alt="EduNexus — Personalized Learning Platform" class="edunexus-logo-img sidebar-logo-img">
         </a>
-        <button id="sidebar-toggle" class="sidebar-toggle-btn" title="Toggle Sidebar">
-          &#8942;
+        <button class="sidebar-toggle-btn" onclick="App.toggleSidebar()" title="Toggle Navigation">
+          ⋮
         </button>
       </div>
 
-      <!-- Navigation Items injected dynamically based on role -->
-      <nav id="sidebar-nav-items" class="sidebar-nav">
-        <!-- Injected by router.js -->
-      </nav>
+      <!-- Navigation Links Scrollable Area -->
+      <nav id="sidebar-nav-items" class="sidebar-nav"></nav>
 
-      <!-- Sidebar User Profile Footer -->
+      <!-- PERMANENT SIDEBAR FOOTER USER SECTION -->
       <div class="sidebar-footer">
-        <div id="sidebar-user-avatar" class="user-avatar">S</div>
+        <div id="sidebar-user-avatar" class="user-avatar" onclick="App.toggleProfileDropdown()">S</div>
         <div class="user-info">
           <span id="sidebar-user-name" class="user-name">Demo Student</span>
           <span id="sidebar-user-role" class="user-role">STUDENT</span>
         </div>
+        <button onclick="Auth.confirmLogout()" class="btn btn-secondary btn-sm" style="margin-left: auto; padding: 0.35rem 0.55rem;" title="Logout">
+          🚪
+        </button>
       </div>
     </aside>
 
-    <!-- Main Content Area -->
+    <!-- MAIN DASHBOARD CONTENT AREA -->
     <main class="app-main">
-      <!-- Top Sticky Header -->
+      <!-- Top Sticky App Header -->
       <header class="app-header">
         <div class="header-welcome">
-          <h2 id="header-welcome-text">Good morning, Student 👋</h2>
+          <h2 id="header-welcome-text">Good morning, <strong>Student</strong> 👋</h2>
         </div>
 
+        <!-- Header Actions with Profile Dropdown -->
         <div class="header-actions">
-          <button class="btn btn-secondary btn-sm" onclick="Router.navigate('/settings')">⚙️ Settings</button>
-          <button class="btn btn-outline btn-sm" onclick="Auth.logout()">Logout</button>
+          <button class="btn btn-secondary btn-sm" onclick="Notifications.toast('You have no unread notifications.', 'info')">
+            🔔 <span class="badge badge-cyan" style="padding: 0.1rem 0.4rem;">0</span>
+          </button>
+          
+          <div style="position: relative;">
+            <button class="btn btn-outline btn-sm" onclick="App.toggleProfileDropdown()">
+              👤 Profile ▼
+            </button>
+            <div id="header-profile-dropdown" class="header-profile-dropdown">
+              <a class="dropdown-item" onclick="Router.navigate('/settings')">⚙️ Settings</a>
+              <div style="height: 1px; background: var(--border-color); margin: 0.35rem 0;"></div>
+              <a class="dropdown-item text-danger" onclick="Auth.confirmLogout()">🚪 Logout</a>
+            </div>
+          </div>
         </div>
       </header>
 
-      <!-- Dynamic Page Body -->
-      <div id="page-body-container" class="page-body">
-        <!-- Page contents rendered dynamically -->
-      </div>
+      <!-- Page Body Container (Dynamic SPA Router View) -->
+      <div id="page-body-container" class="page-body"></div>
     </main>
   </div>
 
-  <!-- ============================================================
-       4. JAVASCRIPT MODULE STACK
-       ============================================================ -->
-  <script src="./js/storage.js"></script>
-  <script src="./js/auth.js"></script>
-  <script src="./js/ai-engine.js"></script>
-  <script src="./js/quiz.js"></script>
-  <script src="./js/learning-path.js"></script>
-  <script src="./js/student.js"></script>
-  <script src="./js/teacher.js"></script>
-  <script src="./js/admin.js"></script>
-  <script src="./js/notifications.js"></script>
-  <script src="./js/animations.js"></script>
-  <script src="./js/router.js"></script>
-  <script src="./js/app.js"></script>
+  <!-- GLOBAL MODAL OVERLAY CONTAINER -->
+  <div id="global-modal-overlay" class="modal-overlay">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="global-modal-title" class="modal-title">Notification</h3>
+        <button class="modal-close" onclick="Notifications.closeModal()">&times;</button>
+      </div>
+      <div id="global-modal-body" class="modal-body"></div>
+      <div id="global-modal-footer" class="modal-footer">
+        <button class="btn btn-primary" onclick="Notifications.closeModal()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOBAL TOAST CONTAINER -->
+  <div id="global-toast-container" class="toast-container"></div>
+
+  <!-- JAVASCRIPT MODULAR STACK -->
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ai-engine.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/learning-path.js"></script>
+  <script src="js/student.js"></script>
+  <script src="js/teacher.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
