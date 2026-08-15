@@ -51,10 +51,15 @@ class StudentDashboardController {
         <!-- 1. GREETING HEADER WITH PREMIUM ACADEMIC DATE / TIME WIDGET -->
         <div class="stagger-section stagger-1" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.25rem; margin-bottom:1.75rem;">
           <div>
-            <h1 style="font-size:1.75rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem;">
-              Welcome back, <span class="gradient-text">${user.name}</span> 👋
-            </h1>
-            <p style="font-size:0.875rem; color:var(--text-muted);">
+            <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+              <h1 style="font-size:1.75rem; font-weight:800; color:var(--text-primary); margin:0;">
+                Welcome back, <span class="gradient-text">${user.name}</span> 👋
+              </h1>
+              <button class="btn header-logout-btn" onclick="Auth.confirmLogout()" title="Log out of EduNexus" style="margin-top:0.15rem;">
+                🚪 Logout
+              </button>
+            </div>
+            <p style="font-size:0.875rem; color:var(--text-muted); margin-top:0.25rem;">
               Roll No: <strong>${user.rollNumber || '0245'}</strong> • Computer Science & Engineering
             </p>
           </div>

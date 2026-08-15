@@ -304,3 +304,197 @@
   opacity: 1;
   visibility: visible;
 }
+
+/* ============================================================
+   SINGLE HORIZONTAL GLASS CAPSULE HEADER CONTROLS
+   ============================================================ */
+
+@keyframes glassCapsuleEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.glass-header-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 46px;
+  padding: 0 0.5rem;
+  border-radius: 9999px;
+  background: rgba(13, 27, 42, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  animation: glassCapsuleEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: all 0.25s ease;
+}
+
+[data-theme="light"] .glass-header-capsule {
+  background: rgba(248, 250, 252, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.capsule-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 0.15rem;
+}
+
+[data-theme="light"] .capsule-divider {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.capsule-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 34px;
+  padding: 0 0.65rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #E2E8F0;
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+[data-theme="light"] .capsule-item {
+  color: #334155;
+}
+
+.capsule-item .capsule-icon {
+  color: #94A3B8;
+}
+
+.capsule-item:hover {
+  transform: scale(1.02);
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+[data-theme="light"] .capsule-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #0F172A;
+}
+
+/* 1. NexaAI Pill — Subtle Blue Tinted Accent */
+.capsule-nexaai {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38BDF8;
+  font-weight: 700;
+}
+
+.capsule-nexaai .capsule-icon {
+  font-size: 0.9rem;
+  color: #38BDF8;
+}
+
+.capsule-nexaai:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #7DD3FC;
+}
+
+/* 2. Eye Care Control — Neutral Light Gray */
+.capsule-eyecare .capsule-icon {
+  font-size: 0.9rem;
+  color: #94A3B8;
+}
+
+/* 3. Notification Badge — Neutral Subtle Badge */
+.capsule-notification {
+  gap: 0.35rem;
+}
+
+.capsule-notification .capsule-icon {
+  color: #94A3B8;
+}
+
+.capsule-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #E2E8F0;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+[data-theme="light"] .capsule-badge {
+  background: rgba(0, 0, 0, 0.08);
+  color: #334155;
+}
+
+/* 4. Student Name (Clean Plain Light Text — NO ARROWS) */
+.capsule-user-name {
+  cursor: default;
+  font-weight: 600;
+  color: #F8FAFC;
+  padding: 0 0.4rem;
+}
+
+[data-theme="light"] .capsule-user-name {
+  color: #0F172A;
+}
+
+.capsule-user-name:hover {
+  transform: none;
+  background: transparent;
+}
+
+/* 5. Logout Pill — Neutral Default with Subtle Warm/Red Tint on Hover */
+.capsule-logout {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #E2E8F0;
+  font-weight: 600;
+}
+
+[data-theme="light"] .capsule-logout {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #334155;
+}
+
+.capsule-logout:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #F87171;
+}
+
+@media (max-width: 768px) {
+  .glass-header-capsule {
+    height: 42px;
+    padding: 0 0.35rem;
+    gap: 0.2rem;
+  }
+  .capsule-item {
+    padding: 0 0.45rem;
+    font-size: 0.775rem;
+  }
+  .capsule-text {
+    display: none;
+  }
+  .capsule-nexaai .capsule-text,
+  .capsule-user-name #header-user-name,
+  .capsule-logout .capsule-text {
+    display: inline;
+  }
+}

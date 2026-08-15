@@ -60,29 +60,44 @@
     <main class="app-main">
       <!-- Top Sticky App Header with Utility Controls -->
       <header class="app-header">
-        <!-- Header Utility Actions (Eye Care, Notifications, Profile) -->
         <div class="header-actions">
-          <button class="btn nexaai-floating-btn" onclick="App.openNexaAIChat()" title="✦ NexaAI — EduNexus Learning Intelligence Assistant">
-            <span style="font-size:1.05rem;">✦</span> <span style="font-size:0.75rem; font-weight:800;">NexaAI</span>
-          </button>
-
-          <button class="btn btn-secondary btn-sm" onclick="App.toggleEyeCareTheme()" title="Toggle Eye Protection Mode">
-            👁 <span style="font-size:0.75rem; font-weight:700;">Eye Care</span>
-          </button>
-
-          <button class="btn btn-secondary btn-sm" onclick="Notifications.toast('You have no unread notifications.', 'info')" title="Notifications">
-            🔔 <span class="badge badge-cyan" style="padding: 0.1rem 0.4rem;">0</span>
-          </button>
-          
-          <div style="position: relative;">
-            <button class="btn btn-outline btn-sm" onclick="App.toggleProfileDropdown()" title="Profile Account Menu">
-              👤 <span id="header-user-name">Profile</span> ▼
+          <!-- SINGLE HORIZONTAL GLASS CAPSULE -->
+          <div class="glass-header-capsule">
+            <!-- 1. NEXAAI PILL -->
+            <button class="capsule-item capsule-nexaai" onclick="App.openNexaAIChat()" title="✦ NexaAI Assistant">
+              <span class="capsule-icon">✦</span>
+              <span class="capsule-text">NexaAI</span>
             </button>
-            <div id="header-profile-dropdown" class="header-profile-dropdown">
-              <a class="dropdown-item" onclick="Router.navigate('/settings')">⚙️ Settings</a>
-              <div style="height: 1px; background: var(--border-color); margin: 0.35rem 0;"></div>
-              <a class="dropdown-item text-danger" onclick="Auth.confirmLogout()">🚪 Logout</a>
+
+            <div class="capsule-divider"></div>
+
+            <!-- 2. EYE CARE CONTROL -->
+            <button class="capsule-item capsule-eyecare" onclick="App.toggleEyeCareTheme()" title="Toggle Eye Protection Mode">
+              <span class="capsule-icon">◉</span>
+              <span class="capsule-text">Eye Care</span>
+            </button>
+
+            <div class="capsule-divider"></div>
+
+            <!-- 3. NOTIFICATION BADGE -->
+            <button class="capsule-item capsule-notification" onclick="Notifications.toast('You have no unread notifications.', 'info')" title="Notifications">
+              <span class="capsule-icon">🔔</span>
+              <span class="capsule-badge">0</span>
+            </button>
+
+            <div class="capsule-divider"></div>
+
+            <!-- 4. STUDENT NAME (PLAIN TEXT - NO DROPDOWN ARROW) -->
+            <div class="capsule-item capsule-user-name" title="Current Active User">
+              <span id="header-user-name">Rahul Meena</span>
             </div>
+
+            <div class="capsule-divider"></div>
+
+            <!-- 5. LOGOUT PILL -->
+            <button class="capsule-item capsule-logout" onclick="Auth.logout()" title="Log out of EduNexus">
+              <span class="capsule-text">Logout</span>
+            </button>
           </div>
         </div>
       </header>
