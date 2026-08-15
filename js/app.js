@@ -29,8 +29,12 @@ class AppController {
       // 4. Bind Keyboard Accessibility & Click Outside Listeners
       this.bindEventListeners();
 
-      // 5. Initialize Splash Screen Entrance
+      // 5. Initialize Splash Screen Entrance & Motion Design Observers
       this.initSplashScreen();
+      setTimeout(() => {
+        this.initScrollObserver();
+        this.initParallaxEffects();
+      }, 300);
     };
 
     if (document.readyState === 'loading') {
@@ -333,6 +337,107 @@ class AppController {
       }
     };
     input.click();
+  }
+
+  initScrollObserver() {
+    if (!('IntersectionObserver' in window)) return;
+    
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          this.animateNumberCounters(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+
+    document.querySelectorAll('.reveal-on-scroll').forEach(el => {
+      if (!el.classList.contains('is-visible')) {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) {
+          el.classList.add('is-visible');
+          this.animateNumberCounters(el);
+        } else {
+          observer.observe(el);
+        }
+      }
+    });
+  }
+
+  animateNumberCounters(container = document) {
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const statElements = container.querySelectorAll ? container.querySelectorAll('.stat-value, .stat-number, [data-animate-value]') : [];
+
+    statElements.forEach(el => {
+      if (el.dataset.animated === 'true') return;
+      const text = el.innerText.trim();
+      const numMatch = text.match(/(\d+)/);
+      if (!numMatch) return;
+
+      const targetVal = parseInt(numMatch[1], 10);
+      const prefix = text.split(numMatch[1])[0] || '';
+      const suffix = text.split(numMatch[1])[1] || '';
+
+      if (prefersReducedMotion) {
+        el.innerText = `${prefix}${targetVal}${suffix}`;
+        el.dataset.animated = 'true';
+        return;
+      }
+
+      el.dataset.animated = 'true';
+      let startVal = 0;
+      const duration = 750;
+      const startTime = performance.now();
+
+      const updateCount = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        const currentVal = Math.round(startVal + (targetVal - startVal) * easeProgress);
+
+        el.innerText = `${prefix}${currentVal}${suffix}`;
+
+        if (progress < 1) {
+          requestAnimationFrame(updateCount);
+        } else {
+          el.innerText = `${prefix}${targetVal}${suffix}`;
+        }
+      };
+
+      requestAnimationFrame(updateCount);
+    });
+  }
+
+  initParallaxEffects() {
+    if (window.innerWidth < 768) return;
+    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
+
+    let ticking = false;
+
+    window.addEventListener('mousemove', (e) => {
+      if (ticking) return;
+      ticking = true;
+
+      requestAnimationFrame(() => {
+        const mouseX = (e.clientX / window.innerWidth - 0.5) * 10;
+        const mouseY = (e.clientY / window.innerHeight - 0.5) * 10;
+
+        document.querySelectorAll('.parallax-layer-slow').forEach(el => {
+          el.style.transform = `translate3d(${mouseX * 0.3}px, ${mouseY * 0.3}px, 0)`;
+        });
+
+        document.querySelectorAll('.parallax-layer-fast, .ambient-decor-node').forEach(el => {
+          el.style.transform = `translate3d(${mouseX * 0.7}px, ${mouseY * 0.7}px, 0)`;
+        });
+
+        ticking = false;
+      });
+    }, { passive: true });
   }
 
   bindEventListeners() {

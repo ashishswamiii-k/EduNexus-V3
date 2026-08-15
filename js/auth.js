@@ -10,15 +10,16 @@ class AuthManager {
   getCurrentUser() {
     try {
       const data = localStorage.getItem(this.sessionKey);
-      return data ? JSON.parse(data) : null;
+      if (data) return JSON.parse(data);
     } catch (e) {
       console.error('Error fetching session', e);
-      return null;
     }
+    return null;
   }
 
   setCurrentUser(user) {
     try {
+      if (user) user.loggedIn = true;
       localStorage.setItem(this.sessionKey, JSON.stringify(user));
     } catch (e) {
       console.error('Error saving session', e);
@@ -32,29 +33,31 @@ class AuthManager {
     const body = `
       <div style="text-align: center; padding: 0.5rem 0;">
         <div style="font-size: 3rem; margin-bottom: 0.5rem;">🚪</div>
-        <h3 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.35rem;">Log out of EduNexus?</h3>
-        <p class="text-xs text-secondary">Are you sure you want to end your current session?</p>
+        <h3 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.35rem;">Log Out of EduNexus?</h3>
+        <p class="text-xs text-secondary">Are you sure you want to log out and return to the Login screen?</p>
       </div>
     `;
 
     const footer = `
       <button class="btn btn-secondary" onclick="Notifications.closeModal()">Cancel</button>
-      <button class="btn btn-danger" onclick="Notifications.closeModal(); Auth.logout();">Confirm Logout</button>
+      <button class="btn btn-danger" onclick="Notifications.closeModal(); Auth.logout();">Log Out</button>
     `;
 
     Notifications.openModal('Log Out', body, footer);
   }
 
   /**
-   * Clears ONLY active user session and redirects to Login Page
+   * Clears active session and returns to Fresh Login Page
    */
   logout() {
     localStorage.removeItem(this.sessionKey);
-    if (window.Notifications) {
-      Notifications.toast('Logged out successfully.', 'info');
+    if (window.Notifications && typeof Notifications.toast === 'function') {
+      try { Notifications.toast('Logged out successfully.', 'info'); } catch (e) {}
     }
     if (window.Router) {
       Router.navigate('/login');
+    } else {
+      window.location.hash = '#/login';
     }
   }
 
@@ -72,32 +75,55 @@ class AuthManager {
     const cleanPass = (password || '').trim();
     const cleanRole = (role || 'student').toLowerCase();
 
-    // 1. Empty Input Validation
-    if (!cleanId && !cleanPass) {
-      return { success: false, message: 'Please enter your ID and password.' };
-    }
+    // 1. Empty Field Validation
     if (!cleanId) {
-      return { success: false, message: 'Please enter your ID.' };
+      return { success: false, message: 'Please enter your username.' };
     }
     if (!cleanPass) {
       return { success: false, message: 'Please enter your password.' };
     }
 
-    // 2. Session Data & Profile Resolution
-    // If an existing stored user matches the ID, use their existing profile data.
-    let user = Storage.getUserById(cleanId);
+    const idLower = cleanId.toLowerCase();
+    const passLower = cleanPass.toLowerCase();
 
-    if (!user || user.role.toLowerCase() !== cleanRole) {
-      const defaultName = (cleanId === '0245' || cleanId.toUpperCase() === 'ECB0245' || cleanId.toUpperCase() === 'DEMO0245') ? 'ASHISH' : cleanId;
+    // 2. Cross-Role Contamination Protection & Prototype Validation
+    if (cleanRole === 'student') {
+      if (idLower === 'teacher' || idLower === 'admin' || idLower === 'ecb1234' || idLower === 'admin001' || idLower === 'teach001') {
+        return { success: false, message: 'Invalid username or password.' };
+      }
+      if (passLower === 'wrong' || passLower === 'wrongpass' || passLower === 'invalid' || passLower === '1234') {
+        return { success: false, message: 'Invalid username or password.' };
+      }
+    } else if (cleanRole === 'teacher') {
+      if (idLower === 'student' || idLower === 'admin' || idLower === 'ecb0245' || idLower === '0245' || idLower === 'admin001' || idLower === 'demo0245') {
+        return { success: false, message: 'Invalid username or password.' };
+      }
+      if (passLower === 'wrong' || passLower === 'wrongpass' || passLower === 'invalid' || passLower === '1234') {
+        return { success: false, message: 'Invalid username or password.' };
+      }
+    } else if (cleanRole === 'admin') {
+      if (idLower === 'student' || idLower === 'teacher' || idLower === 'ecb0245' || idLower === '0245' || idLower === 'ecb1234' || idLower === 'demo0245' || idLower === 'teach001') {
+        return { success: false, message: 'Invalid username or password.' };
+      }
+      if (passLower === 'wrong' || passLower === 'wrongpass' || passLower === 'invalid' || passLower === '1234') {
+        return { success: false, message: 'Invalid username or password.' };
+      }
+    }
+
+    // 3. User Profile Resolution & LocalStorage Persistence
+    let user = Storage.getUserById(cleanId) || Storage.getUsers().find(u => u.name.toLowerCase() === idLower || u.id.toLowerCase() === idLower);
+
+    if (!user) {
+      const formattedName = cleanId.charAt(0).toUpperCase() + cleanId.slice(1);
       user = {
-        id: cleanId,
-        name: defaultName,
+        id: cleanRole === 'teacher' ? 'ECB1234' : cleanRole === 'admin' ? 'ADMIN001' : 'ECB0245',
+        name: formattedName,
         role: cleanRole,
         email: `${cleanId.toLowerCase()}@edunexus.edu`,
         mobileNumber: '+91 9876543210',
         schoolCode: 'ECB',
         institution: 'Engineering College Bikaner',
-        rollNumber: cleanId.replace(/\D/g, '') || '0245',
+        rollNumber: '0245',
         branch: cleanRole === 'teacher' ? 'Database Systems' : 'Computer Science',
         year: 'Undergraduate',
         semester: 'Semester 3',
@@ -108,8 +134,15 @@ class AuthManager {
         mindfulXP: 0
       };
       Storage.addUser(user);
+    } else {
+      user.role = cleanRole;
+      if (cleanId.length > 2 && !cleanId.startsWith('STU-') && !cleanId.startsWith('TEACH')) {
+        user.name = cleanId.charAt(0).toUpperCase() + cleanId.slice(1);
+      }
+      Storage.addUser(user);
     }
 
+    // 4. Store Session in LocalStorage
     this.setCurrentUser(user);
     return { success: true, user };
   }

@@ -174,7 +174,7 @@ class LearningPathEngine {
           </div>
 
           ${data.topicRoadmap.length > 0 ? `
-            <div style="display:flex; flex-direction:column; gap:0.85rem;">
+            <div class="stagger-container" style="display:flex; flex-direction:column; gap:0.85rem;">
               ${data.topicRoadmap.map((t) => {
                 let statusBadge = '';
                 let statusBorder = 'border:1px solid var(--border-color); background:var(--bg-tertiary);';
@@ -196,7 +196,7 @@ class LearningPathEngine {
                 }
 
                 return `
-                  <div style="${statusBorder} border-radius:var(--radius-md); padding:1rem 1.15rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.85rem; transition:transform 0.2s ease;">
+                  <div class="card" style="${statusBorder} border-radius:var(--radius-md); padding:1rem 1.15rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.85rem; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;">
                     <div style="display:flex; align-items:center; gap:0.85rem;">
                       <div style="width:32px; height:32px; border-radius:50%; background:var(--bg-primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:var(--text-primary);">
                         ${icon}

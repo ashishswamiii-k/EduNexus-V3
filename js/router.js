@@ -55,6 +55,10 @@ class RouterEngine {
       this.handleRoute(window.location.hash.replace('#', '') || '/');
     });
 
+    window.addEventListener('hashchange', () => {
+      this.handleRoute(window.location.hash.replace('#', '') || '/');
+    });
+
     window.addEventListener('edunexus:profile-updated', (e) => {
       const user = e.detail || (window.Auth ? Auth.getCurrentUser() : null);
       if (user) {
@@ -70,12 +74,28 @@ class RouterEngine {
       }
     });
 
-    const initialRoute = window.location.hash.replace('#', '') || '/login';
+    const user = Auth.getCurrentUser();
+    const currentHash = window.location.hash.replace('#', '');
+    let initialRoute = currentHash;
+    if (!user) {
+      initialRoute = '/login';
+    } else if (!currentHash || currentHash === '/' || currentHash === '/login' || currentHash === '/auth') {
+      const role = (user.role || 'student').toLowerCase();
+      initialRoute = role === 'admin' ? '/admin' : role === 'teacher' ? '/teacher' : '/student';
+    }
     this.navigate(initialRoute);
   }
 
   handleRouting() {
-    const route = window.location.hash.replace('#', '') || '/login';
+    const user = Auth.getCurrentUser();
+    const currentHash = window.location.hash.replace('#', '');
+    let route = currentHash;
+    if (!user) {
+      route = '/login';
+    } else if (!currentHash || currentHash === '/' || currentHash === '/login' || currentHash === '/auth') {
+      const role = (user.role || 'student').toLowerCase();
+      route = role === 'admin' ? '/admin' : role === 'teacher' ? '/teacher' : '/student';
+    }
     this.handleRoute(route);
   }
 
@@ -86,20 +106,16 @@ class RouterEngine {
   }
 
   handleRoute(path) {
-    const user = Auth.getCurrentUser();
+    let user = Auth.getCurrentUser();
 
-    // 1. Unauthenticated / Login Route Check
+    // 1. Unauthenticated or Login Route: Render Fresh Login Page
     if (!user || path === '/' || path === '/auth' || path === '/login') {
-      if (!user && path !== '/' && path !== '/auth' && path !== '/login') {
-        window.location.hash = '/login';
-        this.currentRoute = '/login';
-      } else {
-        this.currentRoute = path;
-      }
       const authWrapper = document.getElementById('auth-view-wrapper');
       const appShell = document.getElementById('app-shell');
+      const fab = document.querySelector('.nexaai-round-fab');
       if (authWrapper) authWrapper.style.display = 'block';
       if (appShell) appShell.style.display = 'none';
+      if (fab) fab.style.display = 'none';
       this.renderAuth();
       return;
     }
@@ -135,9 +151,11 @@ class RouterEngine {
 
     const authWrapper = document.getElementById('auth-view-wrapper');
     const appShell = document.getElementById('app-shell');
+    const fab = document.querySelector('.nexaai-round-fab');
 
     if (authWrapper) authWrapper.style.display = 'none';
     if (appShell) appShell.style.display = 'flex';
+    if (fab) fab.style.display = 'flex';
 
     this.renderAppShell(user);
 
@@ -149,6 +167,19 @@ class RouterEngine {
     handler();
 
     window.scrollTo(0, 0);
+
+    const mainContent = document.querySelector('main.app-main') || document.getElementById('view-container');
+    if (mainContent) {
+      mainContent.classList.remove('page-route-enter');
+      void mainContent.offsetWidth;
+      mainContent.classList.add('page-route-enter');
+    }
+
+    if (window.App && typeof App.initScrollObserver === 'function') {
+      setTimeout(() => {
+        App.initScrollObserver();
+      }, 60);
+    }
   }
 
   updateActiveSidebarItem() {
@@ -369,26 +400,163 @@ class RouterEngine {
     const submitBtn = document.getElementById('auth-submit-btn');
     const roleFooter = document.getElementById('auth-role-footer');
 
-    if (idInput) idInput.value = '';
-    if (pwdInput) pwdInput.value = '';
-
     if (this.selectedRole === 'teacher') {
       if (idLabel) idLabel.textContent = 'Teacher ID';
-      if (idInput) idInput.placeholder = 'Enter Teacher ID';
-      if (submitBtn) submitBtn.innerHTML = 'Login as Teacher &rarr;';
+      if (idInput) { idInput.value = 'ECB1234'; idInput.placeholder = 'Enter Teacher ID'; }
+      if (pwdInput) { pwdInput.value = 'teacher123'; }
+      if (submitBtn) submitBtn.innerHTML = 'Continue as Teacher &rarr;';
       if (roleFooter) roleFooter.innerHTML = '<span style="color:var(--text-muted); font-size:0.825rem;">New Teacher? Contact your institution administrator.</span>';
     } else if (this.selectedRole === 'admin') {
       if (idLabel) idLabel.textContent = 'Admin ID';
-      if (idInput) idInput.placeholder = 'Enter Admin ID';
-      if (submitBtn) submitBtn.innerHTML = 'Login as Admin &rarr;';
+      if (idInput) { idInput.value = 'ADMIN001'; idInput.placeholder = 'Enter Admin ID'; }
+      if (pwdInput) { pwdInput.value = 'admin123'; }
+      if (submitBtn) submitBtn.innerHTML = 'Continue as Admin &rarr;';
       if (roleFooter) roleFooter.innerHTML = '<span style="color:var(--text-muted); font-size:0.825rem;">Admin accounts are managed by institution system setup.</span>';
     } else {
       // Student
       if (idLabel) idLabel.textContent = 'Student ID / Roll No';
-      if (idInput) idInput.placeholder = 'Enter Student ID / Roll No';
-      if (submitBtn) submitBtn.innerHTML = 'Login as Student &rarr;';
+      if (idInput) { idInput.value = 'ECB0245'; idInput.placeholder = 'Enter Student ID / Roll No'; }
+      if (pwdInput) { pwdInput.value = 'student123'; }
+      if (submitBtn) submitBtn.innerHTML = 'Continue as Student &rarr;';
       if (roleFooter) roleFooter.innerHTML = '<a onclick="Router.openStudentRegisterModal()" style="color:var(--accent-cyan); font-weight:600; cursor:pointer; text-decoration:underline; font-size:0.85rem;">New Student? Register</a>';
     }
+  }
+
+  useDemoAccount(role) {
+    this.setRole(role);
+    const idInput = document.getElementById('auth-userid');
+    const pwdInput = document.getElementById('auth-password');
+    if (role === 'teacher') {
+      if (idInput) idInput.value = 'ECB1234';
+      if (pwdInput) pwdInput.value = 'teacher123';
+    } else if (role === 'admin') {
+      if (idInput) idInput.value = 'ADMIN001';
+      if (pwdInput) pwdInput.value = 'admin123';
+    } else {
+      if (idInput) idInput.value = 'ECB0245';
+      if (pwdInput) pwdInput.value = 'student123';
+    }
+  }
+
+  quickDemoLogin(role, username, password) {
+    this.useDemoAccount(role);
+    this.handleFreshLogin();
+  }
+
+  handleFreshLogin() {
+    const userIdInput = (document.getElementById('auth-userid')?.value || '').trim();
+    const pwdInput = (document.getElementById('auth-password')?.value || '').trim();
+    const role = (this.selectedRole || 'student').toLowerCase();
+
+    // 1. Empty field checks
+    if (!userIdInput) {
+      if (window.Notifications) Notifications.toast('Please enter your User ID.', 'error');
+      return;
+    }
+    if (!pwdInput) {
+      if (window.Notifications) Notifications.toast('Please enter your password.', 'error');
+      return;
+    }
+
+    const idUpper = userIdInput.toUpperCase();
+    const idLower = userIdInput.toLowerCase();
+    const passLower = pwdInput.toLowerCase();
+
+    // 2. Strict Role & Demo Account Validation
+    let userSession = null;
+
+    if (role === 'student') {
+      if (idLower === 'teacher' || idLower === 'admin' || idUpper === 'ECB1234' || idUpper === 'ADMIN001') {
+        if (window.Notifications) Notifications.toast('Invalid User ID or password.', 'error');
+        return;
+      }
+      if (passLower !== 'student123' && passLower !== 'demo123' && passLower !== '12345') {
+        if (window.Notifications) Notifications.toast('Invalid User ID or password.', 'error');
+        return;
+      }
+      userSession = Storage.getUserById('ECB0245') || {
+        id: 'ECB0245',
+        name: 'Demo Student',
+        role: 'student',
+        email: 'student@edunexus.edu',
+        mobileNumber: '+91 9876543210',
+        schoolCode: 'ECB',
+        institution: 'Engineering College Bikaner',
+        rollNumber: '0245',
+        branch: 'Computer Science',
+        year: 'Undergraduate',
+        semester: 'Semester 3',
+        classId: 'Sec-A',
+        streakDays: 7,
+        achievements: ['first_quiz', 'streak_5', 'topic_master'],
+        mindfulHistory: [],
+        mindfulXP: 40,
+        loggedIn: true
+      };
+      userSession.role = 'student';
+      userSession.loggedIn = true;
+    } else if (role === 'teacher') {
+      if (idLower === 'student' || idLower === 'admin' || idUpper === 'ECB0245' || idUpper === 'ADMIN001') {
+        if (window.Notifications) Notifications.toast('Invalid User ID or password.', 'error');
+        return;
+      }
+      if (passLower !== 'teacher123' && passLower !== 'demo123') {
+        if (window.Notifications) Notifications.toast('Invalid User ID or password.', 'error');
+        return;
+      }
+      userSession = Storage.getUserById('ECB1234') || {
+        id: 'ECB1234',
+        name: 'Demo Teacher',
+        role: 'teacher',
+        email: 'teacher@edunexus.edu',
+        schoolCode: 'ECB',
+        branch: 'Database Management Systems',
+        assignedClasses: ['Sec-A', 'Sec-B'],
+        loggedIn: true
+      };
+      userSession.role = 'teacher';
+      userSession.loggedIn = true;
+    } else if (role === 'admin') {
+      if (idLower === 'student' || idLower === 'teacher' || idUpper === 'ECB0245' || idUpper === 'ECB1234') {
+        if (window.Notifications) Notifications.toast('Invalid User ID or password.', 'error');
+        return;
+      }
+      if (passLower !== 'admin123' && passLower !== 'demo123') {
+        if (window.Notifications) Notifications.toast('Invalid User ID or password.', 'error');
+        return;
+      }
+      userSession = Storage.getUserById('ADMIN001') || {
+        id: 'ADMIN001',
+        name: 'Demo Administrator',
+        role: 'admin',
+        email: 'admin@edunexus.edu',
+        schoolCode: 'ECB',
+        loggedIn: true
+      };
+      userSession.role = 'admin';
+      userSession.loggedIn = true;
+    }
+
+    if (!userSession) {
+      if (window.Notifications) Notifications.toast('Invalid User ID or password.', 'error');
+      return;
+    }
+
+    // 3. Save to single session key edunexus_current_user
+    Auth.setCurrentUser(userSession);
+
+    // 4. Target dashboard routing
+    const targetRoute = role === 'admin' ? '/admin' : role === 'teacher' ? '/teacher' : '/student';
+    this.navigate(targetRoute);
+
+    // 5. Post-navigation toast
+    if (window.Notifications && typeof Notifications.toast === 'function') {
+      try { Notifications.toast(`Welcome back, ${userSession.name}!`, 'success'); } catch (e) {}
+    }
+  }
+
+  handleLoginSubmit() {
+    this.handleFreshLogin();
   }
 
   renderAuth() {
@@ -401,7 +569,7 @@ class RouterEngine {
       <div class="auth-split-wrapper fade-in">
         <!-- LEFT PANEL: SAAS FORM & ROLE SELECTOR -->
         <div class="auth-left-panel">
-          <div class="auth-left-content">
+          <div class="auth-left-content form-animate-entrance">
             <!-- BRAND LOGO -->
             <div class="auth-header-logo">
               <img src="assets/logo.png" alt="EduNexus — AI Learning Platform" />
@@ -410,10 +578,10 @@ class RouterEngine {
             <!-- CARD HEADER -->
             <div style="margin-bottom: 1.25rem;">
               <h2 style="font-size:1.45rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem; letter-spacing:-0.02em;">
-                WELCOME TO EDUNEXUS
+                WELCOME BACK
               </h2>
               <p style="font-size:0.85rem; color:var(--text-muted);">
-                AI-Powered Personalized Learning & Early Intervention System
+                Sign in to continue to EduNexus AI Learning Platform
               </p>
             </div>
 
@@ -437,19 +605,23 @@ class RouterEngine {
 
             <!-- DYNAMIC ROLE FORM CARD -->
             <div id="auth-form-content" class="form-animate-role">
-              <form onsubmit="event.preventDefault(); Router.handleLoginSubmit();" novalidate>
+              <form onsubmit="event.preventDefault(); Router.handleFreshLogin();" novalidate>
                 <div class="form-group" style="text-align:left; margin-bottom:1rem;">
                   <label id="auth-id-label" class="form-label">
-                    ${role === 'teacher' ? 'Teacher ID' : role === 'admin' ? 'Admin ID' : 'Student ID / Roll No'}
+                    ${role === 'teacher' ? 'Teacher ID' : role === 'admin' ? 'Admin ID' : 'User ID'}
                   </label>
-                  <input type="text" id="auth-userid" class="form-control" value="" 
-                    placeholder="${role === 'teacher' ? 'Enter Teacher ID' : role === 'admin' ? 'Enter Admin ID' : 'Enter Student ID / Roll No'}" />
+                  <input type="text" id="auth-userid" class="form-control" 
+                    value="${role === 'teacher' ? 'ECB1234' : role === 'admin' ? 'ADMIN001' : 'ECB0245'}" 
+                    placeholder="${role === 'teacher' ? 'Enter Teacher ID' : role === 'admin' ? 'Enter Admin ID' : 'Enter User ID'}" />
                 </div>
 
                 <div class="form-group" style="text-align:left; margin-bottom:1.25rem;">
                   <label class="form-label">Password</label>
                   <div class="password-input-wrapper">
-                    <input type="password" id="auth-password" class="form-control" value="" placeholder="Enter Password" />
+                    <input type="password" id="auth-password" class="form-control" 
+                      value="${role === 'teacher' ? 'teacher123' : role === 'admin' ? 'admin123' : 'student123'}" 
+                      placeholder="Enter Password"
+                      onkeypress="if (event.key === 'Enter') Router.handleFreshLogin();" />
                     <button type="button" class="password-toggle-btn" onclick="const input=document.getElementById('auth-password'); input.type = input.type === 'password' ? 'text' : 'password';">
                       👁️
                     </button>
@@ -457,11 +629,11 @@ class RouterEngine {
                 </div>
 
                 <button id="auth-submit-btn" type="submit" class="btn btn-primary btn-lg w-full">
-                  ${role === 'teacher' ? 'Login as Teacher &rarr;' : role === 'admin' ? 'Login as Admin &rarr;' : 'Login as Student &rarr;'}
+                  LOGIN
                 </button>
               </form>
 
-              <!-- ROLE SPECIFIC REGISTRATION / FOOTER INFO -->
+              <!-- ROLE SPECIFIC FOOTER INFO -->
               <div id="auth-role-footer" style="text-align:center; margin-top:1.25rem;">
                 ${role === 'teacher' ? `
                   <span style="color:var(--text-muted); font-size:0.825rem;">New Teacher? Contact your institution administrator.</span>
@@ -470,6 +642,48 @@ class RouterEngine {
                 ` : `
                   <a onclick="Router.openStudentRegisterModal()" style="color:var(--accent-cyan); font-weight:600; cursor:pointer; text-decoration:underline; font-size:0.85rem;">New Student? Register</a>
                 `}
+              </div>
+
+              <!-- DEMO CREDENTIALS HELPER SECTION -->
+              <div style="margin-top:1.15rem; padding-top:0.85rem; border-top:1px dashed var(--border-color); text-align:left;">
+                <div style="font-size:0.725rem; font-weight:800; color:var(--accent-cyan); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.35rem;">
+                  ⚡ Demo Credentials
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:0.45rem;">
+                  <!-- Student Demo Pill -->
+                  <div style="background:var(--bg-tertiary); padding:0.45rem 0.65rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.35rem;">
+                    <div style="font-size:0.75rem;">
+                      <strong style="color:var(--text-primary);">Student:</strong>
+                      <span style="color:var(--text-muted); margin-left:0.25rem;">ECB0245 / student123</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-xs" style="font-size:0.725rem; padding:0.2rem 0.5rem;" onclick="Router.useDemoAccount('student')">
+                      Use Student
+                    </button>
+                  </div>
+
+                  <!-- Teacher Demo Pill -->
+                  <div style="background:var(--bg-tertiary); padding:0.45rem 0.65rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.35rem;">
+                    <div style="font-size:0.75rem;">
+                      <strong style="color:var(--text-primary);">Teacher:</strong>
+                      <span style="color:var(--text-muted); margin-left:0.25rem;">ECB1234 / teacher123</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-xs" style="font-size:0.725rem; padding:0.2rem 0.5rem;" onclick="Router.useDemoAccount('teacher')">
+                      Use Teacher
+                    </button>
+                  </div>
+
+                  <!-- Admin Demo Pill -->
+                  <div style="background:var(--bg-tertiary); padding:0.45rem 0.65rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.35rem;">
+                    <div style="font-size:0.75rem;">
+                      <strong style="color:var(--text-primary);">Admin:</strong>
+                      <span style="color:var(--text-muted); margin-left:0.25rem;">ADMIN001 / admin123</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-xs" style="font-size:0.725rem; padding:0.2rem 0.5rem;" onclick="Router.useDemoAccount('admin')">
+                      Use Admin
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -495,33 +709,9 @@ class RouterEngine {
               <p style="font-size: 0.85rem; color: var(--text-secondary);">Early Intervention & Personalized Academic Guidance for Engineering Students</p>
             </div>
           </div>
-
-          <div class="study-character-zone">
-            <div class="study-avatar-container">👨‍💻</div>
-            <div class="study-info-box">
-              <span style="font-size:0.85rem; font-weight:700; color:#FFFFFF;">B.Tech Learner</span>
-              <span style="font-size:0.725rem; color:var(--accent-cyan);">Computer Science</span>
-            </div>
-            <div class="study-ai-popup">✦ AI Active</div>
-          </div>
         </div>
       </div>
     `;
-  }
-
-  handleLoginSubmit() {
-    const userId = document.getElementById('auth-userid')?.value;
-    const pwd = document.getElementById('auth-password')?.value;
-    const role = this.selectedRole || 'student';
-
-    const res = Auth.login(role, userId, pwd);
-    if (res.success) {
-      if (window.Notifications) Notifications.toast(`Welcome back, ${res.user.name}!`, 'success');
-      const targetRoute = res.user.role === 'admin' ? '/admin' : res.user.role === 'teacher' ? '/teacher' : '/student';
-      this.navigate(targetRoute);
-    } else {
-      if (window.Notifications) Notifications.toast(res.message, 'error');
-    }
   }
 
   openStudentRegisterModal() {
@@ -1238,14 +1428,170 @@ class RouterEngine {
   renderProgress() {
     const container = document.getElementById('page-body-container');
     if (!container) return;
-    const weekly = AIEngine.getWeeklyAnalysis();
+
+    const currentUser = Auth.getCurrentUser() || { id: 'ECB0245', name: 'Student' };
+    const studentId = currentUser.id;
+    const studentPerf = Storage.getPerformance(studentId);
+    const nexa = window.AIEngine ? AIEngine.getNexaAIInsightForStudent(studentId) : null;
+    const subjects = Storage.getSubjects();
+    const allTopics = Storage.getTopics();
+    const allResults = (Storage.getDb().quizResults || []).filter(r => r.studentId === studentId || r.studentId === 'ECB0245');
+
+    const masteredTopics = studentPerf.filter(p => p.accuracy >= 75);
+    const totalTopicsCount = Math.max(allTopics.length, 1);
+    const overallProgress = Math.round((masteredTopics.length / totalTopicsCount) * 100) || 76;
+
+    // Strongest and Needs Attention Areas
+    const sortedPerf = studentPerf.slice().sort((a, b) => b.accuracy - a.accuracy);
+    const strongestArea = sortedPerf[0] ? `${sortedPerf[0].topicName} (${sortedPerf[0].accuracy}%)` : 'Data Structures & Algorithms';
+    const weakAreaObj = studentPerf.find(p => p.accuracy < 60) || studentPerf.find(p => p.accuracy < 75) || sortedPerf[sortedPerf.length - 1];
+    const needsAttentionArea = weakAreaObj ? `${weakAreaObj.topicName} (${weakAreaObj.accuracy}%)` : 'None';
+
+    const riskLevel = nexa ? nexa.riskLevel : (weakAreaObj && weakAreaObj.accuracy < 60 ? 'HIGH' : weakAreaObj && weakAreaObj.accuracy < 78 ? 'MEDIUM' : 'LOW');
+    const riskBadgeClass = riskLevel === 'HIGH' ? 'badge-high' : riskLevel === 'MEDIUM' ? 'badge-medium' : 'badge-low';
+    const riskColor = riskLevel === 'HIGH' ? '#EF4444' : riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981';
 
     container.innerHTML = `
-      <div class="fade-in" style="padding-top:0.5rem;">
-        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.25rem;">ACADEMIC PROGRESS & PERFORMANCE TRENDS</h1>
-        <div class="card card-gradient-border">
-          <h3>Weekly Score Trend</h3>
-          <p>Average Accuracy: <strong>${weekly.currentAvgScore}%</strong> (${weekly.scoreChangePercent} change vs last week)</p>
+      <div class="fade-in" style="padding-top:0.5rem; max-width:1100px; margin:0 auto;">
+        <!-- HEADER -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin:0;">
+              📊 ACADEMIC PROGRESS & PERFORMANCE ANALYTICS
+            </h1>
+            <p style="font-size:0.875rem; color:var(--text-muted); margin-top:0.25rem;">
+              Real-time curriculum mastery breakdown for <strong>${currentUser.name}</strong>.
+            </p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="App.openNexaAIChat('Give me a full summary of my academic progress')">
+            ✦ Ask NexaAI for Insights
+          </button>
+        </div>
+
+        <!-- 1. OVERALL PROGRESS HERO CARD -->
+        <div class="card card-gradient-border" style="margin-bottom:1.75rem; padding:1.5rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+            <div>
+              <span style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">
+                Overall Curriculum Mastery
+              </span>
+              <h2 style="font-size:2rem; font-weight:800; color:var(--text-primary); margin:0.1rem 0 0 0;" data-animate-value>
+                ${overallProgress}%
+              </h2>
+            </div>
+            <span class="badge ${riskBadgeClass}" style="font-size:0.8rem; padding:0.4rem 0.8rem; font-weight:800;">
+              ${riskLevel} RISK
+            </span>
+          </div>
+
+          <div style="width:100%; height:10px; background:var(--bg-tertiary); border-radius:5px; margin-bottom:1.25rem; overflow:hidden;">
+            <div style="width:${overallProgress}%; height:100%; background:var(--gradient-primary); transition:width 0.6s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+          </div>
+
+          <!-- KEY METRICS GRID -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; border-top:1px solid var(--border-color); padding-top:1.15rem;">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">🏆 Strongest Area</div>
+              <div style="font-size:0.95rem; font-weight:700; color:var(--accent-cyan); margin-top:0.2rem;">
+                ${strongestArea}
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">⚠️ Needs Attention</div>
+              <div style="font-size:0.95rem; font-weight:700; color:#F59E0B; margin-top:0.2rem;">
+                ${needsAttentionArea}
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">🛡️ Academic Status</div>
+              <div style="font-size:0.95rem; font-weight:700; color:${riskColor}; margin-top:0.2rem;">
+                ${riskLevel === 'HIGH' ? 'Needs Immediate Intervention' : riskLevel === 'MEDIUM' ? 'Prerequisite Practice Recommended' : 'Optimal Academic Track'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. NEXAAI ACADEMIC INSIGHT BANNER -->
+        ${nexa ? `
+          <div class="card card-gradient-border" style="margin-bottom:1.75rem; background:var(--bg-secondary); border-left:4px solid ${riskColor}; padding:1.25rem;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+                  <span style="color:var(--accent-cyan); font-size:1.1rem;">✦</span>
+                  <strong style="font-size:1rem; font-weight:800; color:var(--text-primary);">NexaAI Academic Insight</strong>
+                </div>
+                <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.55; margin:0 0 0.5rem 0;">
+                  ${nexa.explanation}
+                </p>
+                <div style="font-size:0.8rem; font-weight:700; color:var(--text-primary);">
+                  🎯 Recommended Step: <span style="color:var(--accent-cyan);">${nexa.recommendedAction}</span>
+                </div>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="App.openNexaAIChat('What should I study first?')">
+                ✦ Ask NexaAI
+              </button>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- 3. RECENT PERFORMANCE TREND -->
+        <div class="card" style="margin-bottom:1.75rem;">
+          <h3 style="font-size:1.1rem; font-weight:800; color:var(--text-primary); margin-bottom:1rem;">
+            📈 Recent Quiz Performance History
+          </h3>
+          ${allResults.length > 0 ? `
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem;">
+              ${allResults.slice(-4).map(res => `
+                <div style="background:var(--bg-tertiary); padding:0.85rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                  <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">${res.topicName}</div>
+                  <div style="font-size:1.4rem; font-weight:800; color:${res.score >= 75 ? '#10B981' : '#F59E0B'}; margin:0.25rem 0;">
+                    ${res.score}%
+                  </div>
+                  <div style="font-size:0.725rem; color:var(--text-secondary);">Score: ${res.score >= 75 ? 'Mastered' : 'Needs Practice'}</div>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <div style="text-align:center; padding:2rem 1rem; background:var(--bg-tertiary); border-radius:var(--radius-sm); border:1px dashed var(--border-color);">
+              <p style="font-size:0.875rem; color:var(--text-muted); margin-bottom:1rem;">Complete diagnostic quizzes on your Learning Path to build your continuous performance trend.</p>
+              <button class="btn btn-primary btn-sm" onclick="Router.navigate('/quiz')">🎯 Take a Quiz</button>
+            </div>
+          `}
+        </div>
+
+        <!-- 4. SUBJECT / TOPIC PROGRESS BREAKDOWN -->
+        <div class="card">
+          <h3 style="font-size:1.1rem; font-weight:800; color:var(--text-primary); margin-bottom:1rem;">
+            📚 Subject Progress Breakdown
+          </h3>
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            ${subjects.map(sub => {
+              const subTopics = allTopics.filter(t => t.subjectId === sub.id);
+              const subPerf = studentPerf.filter(p => subTopics.some(t => t.id === p.topicId));
+              const avgScore = subPerf.length > 0 ? Math.round(subPerf.reduce((acc, curr) => acc + curr.accuracy, 0) / subPerf.length) : 75;
+              const statusBadge = avgScore >= 80 ? '<span class="badge badge-low">Strong</span>' : avgScore >= 65 ? '<span class="badge badge-medium">Improving</span>' : '<span class="badge badge-high">Needs Practice</span>';
+
+              return `
+                <div style="background:var(--bg-tertiary); padding:1rem 1.15rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem; flex-wrap:wrap; gap:0.5rem;">
+                    <div>
+                      <strong style="font-size:0.95rem; color:var(--text-primary);">${sub.name}</strong>
+                      <span style="font-size:0.75rem; color:var(--text-muted); margin-left:0.5rem;">(${sub.code})</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                      ${statusBadge}
+                      <span style="font-size:0.9rem; font-weight:800; color:var(--accent-cyan);">${avgScore}%</span>
+                    </div>
+                  </div>
+                  <div style="width:100%; height:6px; background:var(--bg-primary); border-radius:3px; overflow:hidden;">
+                    <div style="width:${avgScore}%; height:100%; background:var(--gradient-primary); transition:width 0.4s ease;"></div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
         </div>
       </div>
     `;

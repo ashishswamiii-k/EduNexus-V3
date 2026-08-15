@@ -349,9 +349,15 @@ class QuizEngine {
     }
 
     const q = this.currentQuiz.questions[this.currentIndex];
+    const progressPct = Math.round(((this.currentIndex + 1) / this.currentQuiz.questions.length) * 100);
 
     container.innerHTML = `
-      <div class="card card-gradient-border fade-in" style="max-width:740px; margin:0 auto; padding:2rem;">
+      <div class="card card-gradient-border quiz-slide-in" style="max-width:740px; margin:0 auto; padding:2rem;">
+        <!-- ANIMATED QUIZ PROGRESS BAR -->
+        <div style="width:100%; height:5px; background:var(--bg-tertiary); border-radius:3px; margin-bottom:1.25rem; overflow:hidden;">
+          <div style="width:${progressPct}%; height:100%; background:var(--gradient-primary); transition:width 0.35s cubic-bezier(0.16, 1, 0.3, 1);"></div>
+        </div>
+
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; border-bottom:1px solid var(--border-color); padding-bottom:0.85rem;">
           <div>
             <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">
@@ -466,14 +472,14 @@ class QuizEngine {
     const riskColor = nexa ? (nexa.riskLevel === 'HIGH' ? '#EF4444' : nexa.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981') : '#06B6D4';
 
     container.innerHTML = `
-      <div class="card card-gradient-border fade-in" style="max-width:820px; margin:0 auto; padding:2rem; text-align:center;">
+      <div class="card card-gradient-border stagger-container" style="max-width:820px; margin:0 auto; padding:2rem; text-align:center;">
         <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">
           QUIZ EVALUATION COMPLETE
         </h2>
         <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1.5rem;">${res.topicName}</p>
 
-        <div style="width:130px; height:130px; border-radius:50%; background:var(--bg-tertiary); border:4px solid ${res.score >= 75 ? '#10B981' : '#F59E0B'}; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 1.5rem auto;">
-          <div style="font-size:2.2rem; font-weight:800; color:${res.score >= 75 ? '#10B981' : '#F59E0B'};">${res.score}%</div>
+        <div class="achievement-pop" style="width:130px; height:130px; border-radius:50%; background:var(--bg-tertiary); border:4px solid ${res.score >= 75 ? '#10B981' : '#F59E0B'}; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 1.5rem auto;">
+          <div style="font-size:2.2rem; font-weight:800; color:${res.score >= 75 ? '#10B981' : '#F59E0B'};" data-animate-value>${res.score}%</div>
           <div style="font-size:0.75rem; color:var(--text-muted);">${res.correctCount} / ${res.totalQuestions} Correct</div>
         </div>
 

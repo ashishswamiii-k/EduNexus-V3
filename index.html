@@ -62,8 +62,8 @@
       <header class="app-header">
         <!-- Header Utility Actions (Eye Care, Notifications, Profile) -->
         <div class="header-actions">
-          <button class="btn btn-primary btn-sm" onclick="App.openNexaAIChat()" title="NexaAI — EduNexus Learning Intelligence Assistant">
-            <span style="color:#FFF;">✦</span> <span style="font-size:0.75rem; font-weight:800;">NexaAI</span>
+          <button class="btn nexaai-floating-btn" onclick="App.openNexaAIChat()" title="✦ NexaAI — EduNexus Learning Intelligence Assistant">
+            <span style="font-size:1.05rem;">✦</span> <span style="font-size:0.75rem; font-weight:800;">NexaAI</span>
           </button>
 
           <button class="btn btn-secondary btn-sm" onclick="App.toggleEyeCareTheme()" title="Toggle Eye Protection Mode">
@@ -91,6 +91,11 @@
       <div id="page-body-container" class="page-body"></div>
     </main>
   </div>
+
+  <!-- FLOATING ROUND NEXAAI ACTION BUTTON (FIXED BOTTOM-RIGHT) -->
+  <button class="nexaai-round-fab" onclick="App.openNexaAIChat()" title="✦ Ask NexaAI Assistant">
+    <span style="font-size:1.3rem;">✦</span>
+  </button>
 
   <!-- GLOBAL MODAL OVERLAY CONTAINER -->
   <div id="global-modal-overlay" class="modal-overlay">

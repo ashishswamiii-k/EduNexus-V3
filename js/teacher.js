@@ -242,12 +242,27 @@ class TeacherViewController {
 
   applyCurrentFilter() {
     const rows = document.querySelectorAll('#teacher-roster-tbody tr');
+    let visibleCount = 0;
     rows.forEach(r => {
       const risk = r.getAttribute('data-risk');
-      if (this.currentRiskFilter === 'ALL' || risk === this.currentRiskFilter) {
+      const isVisible = (this.currentRiskFilter === 'ALL' || risk === this.currentRiskFilter);
+      
+      if (isVisible) {
         r.style.display = '';
+        r.style.opacity = '0';
+        r.style.transform = 'translateY(8px)';
+        const delay = visibleCount * 30;
+        visibleCount++;
+        setTimeout(() => {
+          r.style.opacity = '1';
+          r.style.transform = 'translateY(0)';
+        }, delay);
       } else {
-        r.style.display = 'none';
+        r.style.opacity = '0';
+        r.style.transform = 'translateY(-8px)';
+        setTimeout(() => {
+          r.style.display = 'none';
+        }, 150);
       }
     });
   }

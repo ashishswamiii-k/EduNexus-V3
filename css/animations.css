@@ -220,3 +220,210 @@
   animation: ambientNodeFloat 5s ease-in-out infinite;
   z-index: var(--z-decor);
 }
+
+/* ============================================================
+   ADOBE-INSPIRED MOTION DESIGN & MICRO-INTERACTIONS
+   ============================================================ */
+
+:root {
+  --ease-adobe-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-adobe-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-adobe-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --motion-duration-fast: 0.2s;
+  --motion-duration-medium: 0.35s;
+  --motion-duration-slow: 0.55s;
+}
+
+/* Scroll-Triggered Reveal Classes (IntersectionObserver Target) */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(24px) scale(0.985);
+  transition: opacity var(--motion-duration-slow) var(--ease-adobe-out),
+              transform var(--motion-duration-slow) var(--ease-adobe-out);
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Adobe-Inspired Micro Hover Elevation & Micro-Interactions */
+.card, .stat-card, .btn, .dropdown-item {
+  transition: transform var(--motion-duration-fast) var(--ease-adobe-out),
+              box-shadow var(--motion-duration-fast) var(--ease-adobe-out),
+              border-color var(--motion-duration-fast) ease,
+              background-color var(--motion-duration-fast) ease;
+  will-change: transform, box-shadow;
+}
+
+.card:hover, .stat-card:hover {
+  transform: translateY(-3px) scale(1.004);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 0 16px rgba(6, 182, 212, 0.12);
+}
+
+.btn:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.25);
+}
+
+.btn:active {
+  transform: translateY(0.5px) scale(0.985);
+}
+
+/* Page View Route Transitions */
+.page-route-enter {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: adobePageEnter var(--motion-duration-medium) var(--ease-adobe-out) forwards;
+}
+
+@keyframes adobePageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Staggered Grid & Card Cascades */
+.stagger-container > * {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: adobeStaggerItem var(--motion-duration-medium) var(--ease-adobe-out) forwards;
+}
+
+.stagger-container > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger-container > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger-container > *:nth-child(3) { animation-delay: 0.12s; }
+.stagger-container > *:nth-child(4) { animation-delay: 0.16s; }
+.stagger-container > *:nth-child(5) { animation-delay: 0.20s; }
+.stagger-container > *:nth-child(6) { animation-delay: 0.24s; }
+
+@keyframes adobeStaggerItem {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth Risk Filter Roster Row Transitions */
+#teacher-roster-tbody tr {
+  transition: opacity 0.25s var(--ease-adobe-out), transform 0.25s var(--ease-adobe-out);
+}
+
+/* Modal & Drawer Entrance / Exit */
+.modal-overlay-enter {
+  animation: modalOverlayFade 0.25s ease forwards;
+}
+
+@keyframes modalOverlayFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content-enter {
+  animation: modalScaleUp 0.3s var(--ease-adobe-out) forwards;
+}
+
+@keyframes modalScaleUp {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Parallax Element Layer Classes */
+.parallax-layer-slow {
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
+.parallax-layer-fast {
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+
+/* Very Subtle Bouncing Motion for NexaAI Buttons */
+@keyframes subtleBounce {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+.nexaai-floating-btn {
+  background: var(--gradient-primary) !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(6, 182, 212, 0.5) !important;
+  border-radius: 9999px !important;
+  padding: 0.35rem 0.85rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  font-weight: 800 !important;
+  font-size: 0.75rem !important;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.35) !important;
+  animation: subtleBounce 3s ease-in-out infinite;
+  cursor: pointer;
+  position: relative;
+  z-index: 100;
+  transition: transform 0.2s var(--ease-adobe-out), box-shadow 0.2s ease !important;
+}
+
+.nexaai-floating-btn:hover {
+  animation-play-state: paused;
+  transform: translateY(-2px) scale(1.04) !important;
+  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.5) !important;
+}
+
+/* Floating Round Action Button (Fixed Bottom-Right) */
+.nexaai-round-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.45), 0 0 16px rgba(139, 92, 246, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 999;
+  animation: subtleBounce 3.5s ease-in-out infinite;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+}
+
+.nexaai-round-fab:hover {
+  animation-play-state: paused;
+  transform: scale(1.1) translateY(-3px);
+  box-shadow: 0 12px 30px rgba(6, 182, 212, 0.6), 0 0 20px rgba(139, 92, 246, 0.5);
+}
+
+/* Accessibility — Reduced Motion Media Query Support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal-on-scroll,
+  .stagger-section,
+  .stagger-container > * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .parallax-layer-slow,
+  .parallax-layer-fast,
+  .floating-decorative-element,
+  .reading-student-character {
+    animation: none !important;
+    transform: none !important;
+  }
+}
