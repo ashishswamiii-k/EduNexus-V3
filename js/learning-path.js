@@ -143,15 +143,20 @@ class LearningPathEngine {
                     🎯 Next Action: <span style="color:var(--accent-cyan);">${nexa ? nexa.recommendedAction : 'Complete current focus topic'}</span>
                   </div>
                 </div>
-                ${nexa ? `
-                  <button class="btn btn-primary btn-sm" onclick="Quiz.executeNexaAction('${nexa.actionType}', '${nexa.targetTopicId}')">
-                    ${nexa.actionButtonText} →
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                  ${nexa ? `
+                    <button class="btn btn-primary btn-sm" onclick="Quiz.executeNexaAction('${nexa.actionType}', '${nexa.targetTopicId}')">
+                      ${nexa.actionButtonText} →
+                    </button>
+                  ` : (data.currentTopic ? `
+                    <button class="btn btn-primary btn-sm" onclick="Quiz.startQuiz('${data.currentTopic.id}'); Router.navigate('/quiz');">
+                      🎯 Practice Topic Quiz
+                    </button>
+                  ` : '')}
+                  <button class="btn btn-secondary btn-sm" onclick="App.openNexaAIChat('What should I study today?')">
+                    ✦ Ask NexaAI for Study Plan
                   </button>
-                ` : (data.currentTopic ? `
-                  <button class="btn btn-primary btn-sm" onclick="Quiz.startQuiz('${data.currentTopic.id}'); Router.navigate('/quiz');">
-                    🎯 Practice Topic Quiz
-                  </button>
-                ` : '')}
+                </div>
               </div>
             </div>
           `;
@@ -205,8 +210,11 @@ class LearningPathEngine {
                       </div>
                     </div>
 
-                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
                       ${statusBadge}
+                      <button class="btn btn-secondary btn-sm" onclick="App.openNexaAIChat('Why was this topic recommended?', '${t.id}')">
+                        ✦ Ask NexaAI
+                      </button>
                       <button class="btn btn-outline btn-sm" onclick="Quiz.startQuiz('${t.id}'); Router.navigate('/quiz');" title="Take Quiz for this topic">
                         🎯 Test Topic
                       </button>

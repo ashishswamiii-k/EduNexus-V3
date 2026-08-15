@@ -52,6 +52,54 @@ class AdminViewController {
               <span class="stat-label">MCQ Question Items</span>
             </div>
           </div>
+        <!-- NEXAAI PLATFORM INSIGHT -->
+        <div class="card card-gradient-border" style="margin-bottom: 2rem; border-left:4px solid var(--accent-cyan); background:var(--bg-secondary);">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+            <div>
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <span style="color:var(--accent-cyan); font-size:1.1rem;">✦</span>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color:var(--text-primary); margin:0;">
+                  NexaAI Platform Insight — Prerequisite Gap Hotspots
+                </h3>
+              </div>
+              <p style="font-size:0.85rem; color:var(--text-muted); margin:0.2rem 0 0 0;">
+                Curriculum bottleneck breakdown calculated across diagnostic quiz evaluations.
+              </p>
+            </div>
+            <span class="badge badge-cyan">3 Hotspots Detected</span>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:0.75rem; font-size:0.85rem;">
+            <div>
+              <div style="display:flex; justify-content:space-between; font-weight:700; margin-bottom:0.25rem;">
+                <span>Relational Algebra & Partial Dependency (DBMS)</span>
+                <span class="text-danger">High Impact (40% Students)</span>
+              </div>
+              <div style="height:8px; background:var(--bg-tertiary); border-radius:4px; overflow:hidden;">
+                <div style="width:80%; height:100%; background:#EF4444; border-radius:4px;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-weight:700; margin-bottom:0.25rem;">
+                <span>Singly & Doubly Linked Lists (DSA)</span>
+                <span class="text-warning">Medium Impact (25% Students)</span>
+              </div>
+              <div style="height:8px; background:var(--bg-tertiary); border-radius:4px; overflow:hidden;">
+                <div style="width:60%; height:100%; background:#F59E0B; border-radius:4px;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex; justify-content:space-between; font-weight:700; margin-bottom:0.25rem;">
+                <span>CPU Scheduling Context Switching (OS)</span>
+                <span class="text-warning">Medium Impact (20% Students)</span>
+              </div>
+              <div style="height:8px; background:var(--bg-tertiary); border-radius:4px; overflow:hidden;">
+                <div style="width:45%; height:100%; background:#06B6D4; border-radius:4px;"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- COURSE & SUBJECT ASSIGNMENT CARD -->

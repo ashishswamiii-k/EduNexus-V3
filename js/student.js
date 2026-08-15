@@ -120,6 +120,39 @@ class StudentDashboardController {
           </div>
         </div>
 
+        <!-- NEXAAI DASHBOARD WIDGET -->
+        ${(() => {
+          const nexa = window.AIEngine ? AIEngine.getNexaAIInsightForStudent(user.id) : null;
+          const weakCount = performance.filter(p => p.accuracy < 75 || p.status === 'Needs Focus').length;
+          return `
+            <div class="card card-gradient-border stagger-section stagger-3" style="margin-bottom:2rem; background:var(--bg-secondary); border-left:4px solid var(--accent-cyan);">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+                <div style="flex:1;">
+                  <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+                    <span style="color:var(--accent-cyan); font-size:1.2rem;">✦</span>
+                    <strong style="font-size:1.05rem; font-weight:800; color:var(--text-primary);">NexaAI</strong>
+                    <span style="font-size:0.75rem; color:var(--accent-cyan); font-weight:700; text-transform:uppercase;">EduNexus Learning Intelligence</span>
+                  </div>
+                  <p style="font-size:0.9rem; color:var(--text-primary); font-weight:600; margin:0 0 0.4rem 0;">
+                    Good day, ${user.name}! You currently have <strong style="color:${weakCount > 0 ? '#EF4444' : '#10B981'};">${weakCount} topic${weakCount === 1 ? '' : 's'}</strong> requiring attention.
+                  </p>
+                  <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">
+                    Recommended Focus: <strong>${nexa && nexa.weakTopic ? nexa.weakTopic.name : 'DBMS Normalization'}</strong>. ${nexa ? nexa.recommendedAction : 'Complete current focus topic.'}
+                  </p>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:0.5rem; min-width:180px;">
+                  <button class="btn btn-primary btn-sm" onclick="App.openNexaAIChat('What should I study today?')">
+                    ✦ Ask NexaAI →
+                  </button>
+                  <button class="btn btn-secondary btn-sm" onclick="App.openNexaAIChat('Explain my weak topics')">
+                    💡 Explain Weak Topics
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        })()}
+
         <!-- 3. MY LEARNING & RECOMMENDATIONS -->
         <div class="stagger-section stagger-3" style="margin-bottom:2.25rem;">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">

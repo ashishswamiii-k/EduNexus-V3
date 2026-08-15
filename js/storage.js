@@ -31,96 +31,213 @@ const DEFAULT_DEMO_DATA = {
       classId: 'Sec-A',
       streakDays: 7,
       achievements: ['first_quiz', 'streak_5', 'topic_master', 'mindful_learner'],
-      mindfulHistory: [
-        { id: 'MB_01', date: '2026-08-12', gameName: 'Memory Match', accuracy: 88, focusScore: 92, xpEarned: 20 },
-        { id: 'MB_02', date: '2026-08-13', gameName: 'Focus Tap', accuracy: 95, focusScore: 94, xpEarned: 20 },
-        { id: 'MB_03', date: '2026-08-14', gameName: 'Pattern Recall', accuracy: 84, focusScore: 88, xpEarned: 20 }
-      ],
-      mindfulXP: 60
-    },
-    {
       id: 'ECB0245',
-      name: 'ASHISH',
+      name: 'Rahul Meena',
       role: 'student',
       password: 'student123',
-      email: 'ashish.swami@edunexus.edu',
+      email: 'rahul.meena@edunexus.edu',
       mobileNumber: '+91 9876543210',
       schoolCode: 'ECB',
       institution: 'Engineering College Bikaner',
-      rollNumber: '0245',
+      rollNumber: '1001',
       branch: 'Computer Science',
       year: 'Undergraduate',
       semester: 'Semester 3',
       classId: 'Sec-A',
-      streakDays: 7,
-      achievements: ['first_quiz', 'streak_5', 'topic_master', 'mindful_learner'],
-      mindfulHistory: [
-        { id: 'MB_01', date: '2026-08-12', gameName: 'Memory Match', accuracy: 88, focusScore: 92, xpEarned: 20 },
-        { id: 'MB_02', date: '2026-08-13', gameName: 'Focus Tap', accuracy: 95, focusScore: 94, xpEarned: 20 },
-        { id: 'MB_03', date: '2026-08-14', gameName: 'Pattern Recall', accuracy: 84, focusScore: 88, xpEarned: 20 }
-      ],
-      mindfulXP: 60
+      streakDays: 5,
+      achievements: ['first_quiz'],
+      mindfulHistory: [],
+      mindfulXP: 40
     },
     {
       id: '0245',
-      name: 'ASHISH',
+      name: 'Rahul Meena',
       role: 'student',
       password: 'student123',
-      email: 'ashish.swami@edunexus.edu',
+      email: 'rahul.meena@edunexus.edu',
       mobileNumber: '+91 9876543210',
       schoolCode: 'ECB',
       institution: 'Engineering College Bikaner',
-      rollNumber: '0245',
+      rollNumber: '1001',
       branch: 'Computer Science',
       year: 'Undergraduate',
       semester: 'Semester 3',
       classId: 'Sec-A',
-      streakDays: 7,
-      achievements: ['first_quiz', 'streak_5', 'topic_master', 'mindful_learner'],
-      mindfulHistory: [
-        { id: 'MB_01', date: '2026-08-12', gameName: 'Memory Match', accuracy: 88, focusScore: 92, xpEarned: 20 },
-        { id: 'MB_02', date: '2026-08-13', gameName: 'Focus Tap', accuracy: 95, focusScore: 94, xpEarned: 20 },
-        { id: 'MB_03', date: '2026-08-14', gameName: 'Pattern Recall', accuracy: 84, focusScore: 88, xpEarned: 20 }
-      ],
-      mindfulXP: 60
-    },
-    {
-      id: 'ECB0246',
-      name: 'Rohan Sharma',
-      role: 'student',
-      password: 'student123',
-      email: 'rohan.sharma@edunexus.edu',
-      mobileNumber: '+91 9876543211',
-      schoolCode: 'ECB',
-      institution: 'Engineering College Bikaner',
-      rollNumber: '0246',
-      branch: 'Computer Science',
-      year: 'Undergraduate',
-      semester: 'Semester 3',
-      classId: 'Sec-A',
-      streakDays: 3,
+      streakDays: 5,
       achievements: ['first_quiz'],
       mindfulHistory: [],
-      mindfulXP: 0
+      mindfulXP: 40
     },
     {
-      id: 'ECB0247',
-      name: 'Priya Patel',
+      id: 'STU-1002',
+      name: 'Priya Verma',
       role: 'student',
       password: 'student123',
-      email: 'priya.patel@edunexus.edu',
+      email: 'priya.verma@edunexus.edu',
       mobileNumber: '+91 9876543212',
       schoolCode: 'ECB',
       institution: 'Engineering College Bikaner',
-      rollNumber: '0247',
+      rollNumber: '1002',
+      branch: 'Computer Science',
+      year: 'Undergraduate',
+      semester: 'Semester 3',
+      classId: 'Sec-A',
+      streakDays: 2,
+      achievements: ['first_quiz'],
+      mindfulHistory: [],
+      mindfulXP: 20
+    },
+    {
+      id: 'STU-1003',
+      name: 'Simran Kumari',
+      role: 'student',
+      password: 'student123',
+      email: 'simran.kumari@edunexus.edu',
+      mobileNumber: '+91 9876543213',
+      schoolCode: 'ECB',
+      institution: 'Engineering College Bikaner',
+      rollNumber: '1003',
+      branch: 'Computer Science',
+      year: 'Undergraduate',
+      semester: 'Semester 3',
+      classId: 'Sec-B',
+      streakDays: 3,
+      achievements: ['first_quiz'],
+      mindfulHistory: [],
+      mindfulXP: 20
+    },
+    {
+      id: 'STU-1004',
+      name: 'Aarav Sharma',
+      role: 'student',
+      password: 'student123',
+      email: 'aarav.sharma@edunexus.edu',
+      mobileNumber: '+91 9876543214',
+      schoolCode: 'ECB',
+      institution: 'Engineering College Bikaner',
+      rollNumber: '1004',
+      branch: 'Computer Science',
+      year: 'Undergraduate',
+      semester: 'Semester 3',
+      classId: 'Sec-A',
+      streakDays: 6,
+      achievements: ['first_quiz', 'streak_5'],
+      mindfulHistory: [],
+      mindfulXP: 40
+    },
+    {
+      id: 'STU-1005',
+      name: 'Ananya Singh',
+      role: 'student',
+      password: 'student123',
+      email: 'ananya.singh@edunexus.edu',
+      mobileNumber: '+91 9876543215',
+      schoolCode: 'ECB',
+      institution: 'Engineering College Bikaner',
+      rollNumber: '1005',
+      branch: 'Computer Science',
+      year: 'Undergraduate',
+      semester: 'Semester 3',
+      classId: 'Sec-B',
+      streakDays: 4,
+      achievements: ['first_quiz'],
+      mindfulHistory: [],
+      mindfulXP: 20
+    },
+    {
+      id: 'STU-1006',
+      name: 'Rohan Gupta',
+      role: 'student',
+      password: 'student123',
+      email: 'rohan.gupta@edunexus.edu',
+      mobileNumber: '+91 9876543216',
+      schoolCode: 'ECB',
+      institution: 'Engineering College Bikaner',
+      rollNumber: '1006',
+      branch: 'Computer Science',
+      year: 'Undergraduate',
+      semester: 'Semester 3',
+      classId: 'Sec-A',
+      streakDays: 5,
+      achievements: ['first_quiz', 'streak_5'],
+      mindfulHistory: [],
+      mindfulXP: 40
+    },
+    {
+      id: 'STU-1007',
+      name: 'Neha Kumari',
+      role: 'student',
+      password: 'student123',
+      email: 'neha.kumari@edunexus.edu',
+      mobileNumber: '+91 9876543217',
+      schoolCode: 'ECB',
+      institution: 'Engineering College Bikaner',
+      rollNumber: '1007',
+      branch: 'Computer Science',
+      year: 'Undergraduate',
+      semester: 'Semester 3',
+      classId: 'Sec-A',
+      streakDays: 12,
+      achievements: ['first_quiz', 'streak_5', 'topic_master', 'mindful_learner'],
+      mindfulHistory: [],
+      mindfulXP: 100
+    },
+    {
+      id: 'STU-1008',
+      name: 'Arjun Yadav',
+      role: 'student',
+      password: 'student123',
+      email: 'arjun.yadav@edunexus.edu',
+      mobileNumber: '+91 9876543218',
+      schoolCode: 'ECB',
+      institution: 'Engineering College Bikaner',
+      rollNumber: '1008',
       branch: 'Computer Science',
       year: 'Undergraduate',
       semester: 'Semester 3',
       classId: 'Sec-B',
       streakDays: 10,
-      achievements: ['first_quiz', 'topic_master', 'fast_improver'],
+      achievements: ['first_quiz', 'streak_5', 'topic_master'],
       mindfulHistory: [],
-      mindfulXP: 0
+      mindfulXP: 80
+    },
+    {
+      id: 'STU-1009',
+      name: 'Kavya Sharma',
+      role: 'student',
+      password: 'student123',
+      email: 'kavya.sharma@edunexus.edu',
+      mobileNumber: '+91 9876543219',
+      schoolCode: 'ECB',
+      institution: 'Engineering College Bikaner',
+      rollNumber: '1009',
+      branch: 'Computer Science',
+      year: 'Undergraduate',
+      semester: 'Semester 3',
+      classId: 'Sec-A',
+      streakDays: 15,
+      achievements: ['first_quiz', 'streak_5', 'topic_master', 'mindful_learner'],
+      mindfulHistory: [],
+      mindfulXP: 120
+    },
+    {
+      id: 'STU-1010',
+      name: 'Aditya Verma',
+      role: 'student',
+      password: 'student123',
+      email: 'aditya.verma@edunexus.edu',
+      mobileNumber: '+91 9876543220',
+      schoolCode: 'ECB',
+      institution: 'Engineering College Bikaner',
+      rollNumber: '1010',
+      branch: 'Computer Science',
+      year: 'Undergraduate',
+      semester: 'Semester 3',
+      classId: 'Sec-B',
+      streakDays: 9,
+      achievements: ['first_quiz', 'streak_5', 'topic_master'],
+      mindfulHistory: [],
+      mindfulXP: 60
     },
     {
       id: 'TEACH001',
@@ -349,10 +466,44 @@ const DEFAULT_DEMO_DATA = {
   ],
 
   performance: [
-    { studentId: 'ECB0245', topicId: 'TOP_DBMS_REL', topicName: 'Relational Algebra & Tuple Calculus', accuracy: 84, totalAttempts: 6, status: 'Mastered' },
-    { studentId: 'ECB0245', topicId: 'TOP_DBMS_NORM', topicName: 'DBMS Normalization (1NF, 2NF, 3NF, BCNF)', accuracy: 48, totalAttempts: 5, status: 'Needs Focus' },
+    // HIGH RISK STUDENTS (< 60%)
+    { studentId: 'ECB0245', topicId: 'TOP_DBMS_NORM', topicName: 'DBMS Normalization (1NF, 2NF, 3NF, BCNF)', accuracy: 42, totalAttempts: 5, status: 'Needs Focus' },
     { studentId: 'ECB0245', topicId: 'TOP_OS_SCHED', topicName: 'CPU Scheduling Algorithms', accuracy: 55, totalAttempts: 4, status: 'Needs Focus' },
-    { studentId: 'ECB0245', topicId: 'TOP_OOP_POLY', topicName: 'Inheritance & Polymorphism', accuracy: 88, totalAttempts: 7, status: 'Mastered' }
+    { studentId: 'ECB0245', topicId: 'TOP_DBMS_REL', topicName: 'Relational Algebra & Tuple Calculus', accuracy: 78, totalAttempts: 6, status: 'Mastered' },
+
+    { studentId: '0245', topicId: 'TOP_DBMS_NORM', topicName: 'DBMS Normalization (1NF, 2NF, 3NF, BCNF)', accuracy: 42, totalAttempts: 5, status: 'Needs Focus' },
+    { studentId: '0245', topicId: 'TOP_OS_SCHED', topicName: 'CPU Scheduling Algorithms', accuracy: 55, totalAttempts: 4, status: 'Needs Focus' },
+    { studentId: '0245', topicId: 'TOP_DBMS_REL', topicName: 'Relational Algebra & Tuple Calculus', accuracy: 78, totalAttempts: 6, status: 'Mastered' },
+
+    { studentId: 'STU-1002', topicId: 'TOP_DS_BST', topicName: 'Binary Search Trees & AVL Trees', accuracy: 40, totalAttempts: 4, status: 'Needs Focus' },
+    { studentId: 'STU-1002', topicId: 'TOP_DS_LINK', topicName: 'Singly & Doubly Linked Lists', accuracy: 48, totalAttempts: 3, status: 'Needs Focus' },
+    { studentId: 'STU-1002', topicId: 'TOP_DS_ARR', topicName: 'Arrays, Stacks & Queues', accuracy: 85, totalAttempts: 5, status: 'Mastered' },
+
+    { studentId: 'STU-1003', topicId: 'TOP_COA_PIPE', topicName: 'Pipelining & Cache Organization', accuracy: 50, totalAttempts: 4, status: 'Needs Focus' },
+    { studentId: 'STU-1003', topicId: 'TOP_COA_ALU', topicName: 'ALU & Memory Architecture', accuracy: 54, totalAttempts: 3, status: 'Needs Focus' },
+
+    // MEDIUM RISK STUDENTS (60% - 78%)
+    { studentId: 'STU-1004', topicId: 'TOP_DBMS_NORM', topicName: 'DBMS Normalization (1NF, 2NF, 3NF, BCNF)', accuracy: 65, totalAttempts: 4, status: 'Needs Focus' },
+    { studentId: 'STU-1004', topicId: 'TOP_DBMS_REL', topicName: 'Relational Algebra & Tuple Calculus', accuracy: 78, totalAttempts: 5, status: 'Mastered' },
+
+    { studentId: 'STU-1005', topicId: 'TOP_OS_MEM', topicName: 'Virtual Memory & Page Table Management', accuracy: 68, totalAttempts: 3, status: 'Needs Focus' },
+    { studentId: 'STU-1005', topicId: 'TOP_OS_SCHED', topicName: 'CPU Scheduling Algorithms', accuracy: 82, totalAttempts: 5, status: 'Mastered' },
+
+    { studentId: 'STU-1006', topicId: 'TOP_DM_GRAPH', topicName: 'Graph Theory & Recurrence Relations', accuracy: 64, totalAttempts: 4, status: 'Needs Focus' },
+    { studentId: 'STU-1006', topicId: 'TOP_DM_SET', topicName: 'Set Theory & Mathematical Logic', accuracy: 74, totalAttempts: 4, status: 'Needs Focus' },
+
+    // LOW RISK STUDENTS (> 78%)
+    { studentId: 'STU-1007', topicId: 'TOP_OOP_POLY', topicName: 'Inheritance & Polymorphism', accuracy: 92, totalAttempts: 6, status: 'Mastered' },
+    { studentId: 'STU-1007', topicId: 'TOP_OOP_CLASS', topicName: 'Classes, Objects & Constructors', accuracy: 90, totalAttempts: 5, status: 'Mastered' },
+
+    { studentId: 'STU-1008', topicId: 'TOP_DBMS_REL', topicName: 'Relational Algebra & Tuple Calculus', accuracy: 88, totalAttempts: 7, status: 'Mastered' },
+    { studentId: 'STU-1008', topicId: 'TOP_DBMS_ER', topicName: 'ER Diagrams & Data Modeling', accuracy: 88, totalAttempts: 6, status: 'Mastered' },
+
+    { studentId: 'STU-1009', topicId: 'TOP_DS_BST', topicName: 'Binary Search Trees & AVL Trees', accuracy: 94, totalAttempts: 8, status: 'Mastered' },
+    { studentId: 'STU-1009', topicId: 'TOP_DS_LINK', topicName: 'Singly & Doubly Linked Lists', accuracy: 94, totalAttempts: 7, status: 'Mastered' },
+
+    { studentId: 'STU-1010', topicId: 'TOP_DELD_BOOL', topicName: 'Boolean Algebra & K-Map Minimization', accuracy: 86, totalAttempts: 5, status: 'Mastered' },
+    { studentId: 'STU-1010', topicId: 'TOP_DELD_COMB', topicName: 'Combinational & Sequential Circuits', accuracy: 86, totalAttempts: 5, status: 'Mastered' }
   ],
 
   quizHistory: [
@@ -393,17 +544,35 @@ class StorageManager {
     if (!localStorage.getItem(STORAGE_KEY)) {
       this.resetDemoData();
     } else {
-      // Ensure essential demo accounts are present in existing localStorage
+      // Ensure essential demo accounts & performance profiles are present in existing localStorage
       const db = this.getDb();
       let updated = false;
+
       DEFAULT_DEMO_DATA.users.forEach(demoUser => {
         const exists = db.users && db.users.some(u => u.id.toLowerCase() === demoUser.id.toLowerCase());
         if (!exists) {
           if (!db.users) db.users = [];
           db.users.push(demoUser);
           updated = true;
+        } else {
+          // Update demo names for consistency
+          const target = db.users.find(u => u.id.toLowerCase() === demoUser.id.toLowerCase());
+          if (target && target.name !== demoUser.name) {
+            target.name = demoUser.name;
+            updated = true;
+          }
         }
       });
+
+      DEFAULT_DEMO_DATA.performance.forEach(demoPerf => {
+        const exists = db.performance && db.performance.some(p => p.studentId === demoPerf.studentId && p.topicId === demoPerf.topicId);
+        if (!exists) {
+          if (!db.performance) db.performance = [];
+          db.performance.push(demoPerf);
+          updated = true;
+        }
+      });
+
       if (updated) {
         this.saveDb(db);
       }

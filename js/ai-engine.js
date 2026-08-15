@@ -304,6 +304,202 @@ class AIEngines {
       timestamp: new Date().toISOString()
     };
   }
+
+  /**
+   * NexaAI Student AI Assistant Query Handler
+   * Responds contextually using educational knowledge, topic details, student performance data, and local question bank.
+   */
+  askNexaAI(rawQuery = '', context = {}) {
+    const query = rawQuery.trim().toLowerCase();
+    const activeUser = window.Auth ? Auth.getCurrentUser() : null;
+    const studentId = context.studentId || (activeUser ? activeUser.id : 'ECB0245');
+
+    const performance = Storage.getPerformance(studentId);
+    const history = Storage.getQuizHistory(studentId);
+    const topics = Storage.getTopics();
+    const questions = Storage.getQuestions();
+
+    const activeTopic = context.topicId ? topics.find(t => t.id === context.topicId) : null;
+    const weakPerf = performance.find(p => p.status === 'Needs Focus' || p.accuracy < 75);
+    const weakTopic = weakPerf ? topics.find(t => t.id === weakPerf.topicId) : null;
+
+    // 1. Contextual "Why am I weak in this topic?" / "Explain my weak topics"
+    if (query.includes('weak') || query.includes('why am i') || query.includes('difficulty') || query.includes('struggling')) {
+      if (weakPerf) {
+        const prereq = weakTopic && weakTopic.prerequisiteId ? topics.find(t => t.id === weakTopic.prerequisiteId) : null;
+        return {
+          reply: `Based on your evaluation history, your accuracy in **${weakPerf.topicName}** is **${weakPerf.accuracy}%** (Needs Focus). ${prereq ? `NexaAI identifies **${prereq.name}** as the configured prerequisite. Strengthening partial dependencies and basic concepts in ${prereq.name} will resolve your main learning bottlenecks.` : 'Focus on targeted practice MCQs to reach mastery.'}`,
+          actionText: prereq ? `Review ${prereq.name}` : `Practice ${weakPerf.topicName}`,
+          actionType: 'TARGETED_REVISION',
+          targetTopicId: prereq ? prereq.id : weakPerf.topicId
+        };
+      }
+      return {
+        reply: `Great news! You currently do not have any critical weak topics recorded in your performance profile. Your concept retention across subjects is strong!`,
+        actionText: 'Explore Learning Path',
+        actionType: 'CONTINUE_LEARNING',
+        targetTopicId: 'TOP_DBMS_NORM'
+      };
+    }
+
+    // 2. Study Plan / Revision Request
+    if (query.includes('plan') || query.includes('schedule') || query.includes('study today') || query.includes('prepare')) {
+      const topFocus = weakPerf ? weakPerf.topicName : (activeTopic ? activeTopic.name : 'DBMS Normalization');
+      return {
+        reply: `📅 **NexaAI 3-Step Daily Study Plan**:
+1. **Concept Review (20 min)**: Revise core rules for **${topFocus}**.
+2. **Targeted Practice (15 min)**: Solve 5 practice questions to solidify retention.
+3. **Diagnostic Evaluation (15 min)**: Take a quick topic evaluation quiz on your Learning Path.`,
+        actionText: 'Start Step 1 Practice',
+        actionType: 'TARGETED_REVISION',
+        targetTopicId: weakPerf ? weakPerf.topicId : 'TOP_DBMS_NORM'
+      };
+    }
+
+    // 3. Question Hints
+    if (query.includes('hint') || query.includes('clue') || context.question) {
+      if (context.question) {
+        const q = context.question;
+        return {
+          reply: `💡 **NexaAI Conceptual Hint**: ${q.explanation ? q.explanation.split('.')[0] + '.' : 'Think about key definitions and structural properties related to this topic.'} Focus on the core rule rather than guessing option numbers.`,
+          isHint: true
+        };
+      }
+      return {
+        reply: `💡 **NexaAI Conceptual Hint**: Identify candidate keys first. In 2NF, no non-prime attribute should depend on a proper subset of any candidate key!`,
+        isHint: true
+      };
+    }
+
+    // 4. Practice Questions Request
+    if (query.includes('practice') || query.includes('question') || query.includes('mcq') || query.includes('test me')) {
+      const matchedTopicId = context.topicId || (weakPerf ? weakPerf.topicId : 'TOP_DBMS_NORM');
+      const topicQuestions = Storage.getQuestionsByTopic(matchedTopicId);
+
+      if (topicQuestions.length > 0) {
+        const sample = topicQuestions.slice(0, 3);
+        const qListHtml = sample.map((q, i) => `**Q${i+1}: ${q.question}**\n- ${q.options.join('\n- ')}`).join('\n\n');
+        return {
+          reply: `🎯 **NexaAI Practice Questions**:\n\n${qListHtml}\n\n*Click below to take an interactive practice quiz on these questions.*`,
+          actionText: 'Take Practice Quiz',
+          actionType: 'TARGETED_REVISION',
+          targetTopicId: matchedTopicId
+        };
+      }
+    }
+
+    // 5. Concept Explanations
+    if (query.includes('normalization') || query.includes('dbms') || query.includes('2nf') || query.includes('3nf') || query.includes('bcnf')) {
+      return {
+        reply: `📚 **NexaAI Concept Explanation — DBMS Normalization**:
+Normalization is the systematic technique of organizing data in a relational database to minimize redundancy and prevent insertion/update/deletion anomalies.
+- **1NF**: Atomic values (no multi-valued attributes).
+- **2NF**: In 1NF + No partial dependency (non-prime attributes must depend fully on the primary key).
+- **3NF**: In 2NF + No transitive dependency ($X \\rightarrow Y$, $Y \\rightarrow Z$).
+- **BCNF**: Strict 3NF where for every functional dependency $X \\rightarrow Y$, $X$ must be a super key.`
+      };
+    }
+
+    if (query.includes('recursion')) {
+      return {
+        reply: `🔄 **NexaAI Concept Explanation — Recursion**:
+Recursion is a programming technique where a function calls itself directly or indirectly to solve a smaller instance of the same problem.
+- **Base Case**: The stopping condition that prevents infinite call stacks (e.g. \`if (n <= 1) return 1;\`).
+- **Recursive Step**: Reducing problem size towards base case (e.g. \`return n * factorial(n - 1);\`).`
+      };
+    }
+
+    if (query.includes('compiler') || query.includes('interpreter')) {
+      return {
+        reply: `⚙️ **NexaAI Concept Explanation — Compiler vs Interpreter**:
+- **Compiler**: Translates the entire source code into machine bytecode at once before execution (e.g., C, C++, Java javac). Faster execution, slower build time.
+- **Interpreter**: Translates and executes source code line-by-line at runtime (e.g., Python, JavaScript). Slower execution, instant startup.`
+      };
+    }
+
+    if (query.includes('quadratic') || query.includes('factorization')) {
+      return {
+        reply: `📐 **NexaAI Concept Explanation — Quadratic Equations & Factorization**:
+A quadratic equation is in the form $ax^2 + bx + c = 0$.
+- **Factorization Method**: Find two numbers $p$ and $q$ such that $p + q = b$ and $p \\cdot q = a \\cdot c$. Rewrite middle term $bx$ as $px + qx$.
+- **Quadratic Formula**: $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$.`
+      };
+    }
+
+    if (query.includes('bst') || query.includes('binary search tree') || query.includes('tree')) {
+      return {
+        reply: `🌳 **NexaAI Concept Explanation — Binary Search Trees (BST)**:
+A BST is a node-based binary tree data structure where:
+- The left subtree contains only nodes with keys less than the parent.
+- The right subtree contains only nodes with keys greater than the parent.
+- Average Search/Insert Complexity: $O(\\log n)$. Worst-case (skewed): $O(n)$.`
+      };
+    }
+
+    if (query.includes('scheduling') || query.includes('cpu') || query.includes('sjf') || query.includes('round robin')) {
+      return {
+        reply: `⚡ **NexaAI Concept Explanation — CPU Scheduling Algorithms**:
+CPU scheduling decides which process in the ready queue gets the CPU allocation.
+- **FCFS**: First-Come, First-Served (non-preemptive, subject to convoy effect).
+- **SJF**: Shortest Job First (optimal average waiting time).
+- **Round Robin**: Time quantum slicing (preemptive, fair for interactive systems).`
+      };
+    }
+
+    // Context-Aware Topic Match Fallback
+    if (activeTopic) {
+      return {
+        reply: `💡 **NexaAI Topic Guidance on "${activeTopic.name}"**:
+This topic is part of your ${activeTopic.unit || 'course'} curriculum. Focus on understanding the core definitions, formulas, and structural rules before attempting advanced problem sets. Would you like a practice quiz or study plan for ${activeTopic.name}?`,
+        actionText: `Practice ${activeTopic.name}`,
+        actionType: 'TARGETED_REVISION',
+        targetTopicId: activeTopic.id
+      };
+    }
+
+    // Safety & Out-of-Scope Fallback
+    return {
+      reply: `I don't have enough information to answer that accurately yet. Try asking me about your current subjects, topics, practice quizzes, learning path, or performance!`
+    };
+  }
+
+  /**
+   * Class & Platform Level NexaAI Analytics for Teacher & Admin Dashboards
+   */
+  getClassNexaAIInsight() {
+    const users = Storage.getUsers().filter(u => u.role === 'student');
+    const allPerf = Storage.getDb().performance || [];
+
+    let highCount = 0;
+    let medCount = 0;
+    let lowCount = 0;
+    const gapMap = {};
+
+    users.forEach(u => {
+      const studentPerf = allPerf.filter(p => p.studentId === u.id);
+      const weak = studentPerf.find(p => p.accuracy < 60);
+      if (weak) {
+        highCount++;
+        gapMap[weak.topicName] = (gapMap[weak.topicName] || 0) + 1;
+      } else if (studentPerf.some(p => p.accuracy < 78)) {
+        medCount++;
+      } else {
+        lowCount++;
+      }
+    });
+
+    const topGap = Object.keys(gapMap).sort((a, b) => gapMap[b] - gapMap[a])[0] || 'DBMS Normalization';
+
+    return {
+      totalStudents: users.length,
+      highRiskCount: highCount,
+      mediumRiskCount: medCount,
+      lowRiskCount: lowCount,
+      topPrerequisiteGap: topGap,
+      summary: `${highCount} students are currently classified as High Risk. "${topGap}" appears as the primary prerequisite gap hotspot across recent diagnostic attempts.`,
+      recommendedIntervention: `Schedule a targeted revision session on functional dependencies and prerequisite concepts before advancing to unit assessments.`
+    };
+  }
 }
 
 const AIEngine = new AIEngines();

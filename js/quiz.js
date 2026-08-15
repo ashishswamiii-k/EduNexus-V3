@@ -362,6 +362,9 @@ class QuizEngine {
             </h2>
           </div>
           <div style="display:flex; align-items:center; gap:0.75rem;">
+            <button class="btn btn-secondary btn-sm" style="color:var(--accent-cyan); font-weight:700;" onclick="Quiz.showNexaHint()" title="Get a conceptual hint from NexaAI">
+              💡 Need a Hint?
+            </button>
             <div style="background:var(--bg-tertiary); padding:0.4rem 0.85rem; border-radius:var(--radius-sm); font-weight:700; color:var(--accent-cyan); font-family:monospace; border:1px solid var(--border-color);">
               ⏱ <span id="quiz-timer-display">00:00</span>
             </div>
@@ -404,6 +407,20 @@ class QuizEngine {
     `;
 
     this.updateTimerDisplay();
+  }
+
+  showNexaHint() {
+    if (!this.currentQuiz) return;
+    const q = this.currentQuiz.questions[this.currentIndex];
+    const hintRes = window.AIEngine ? AIEngine.askNexaAI('Need a hint', { question: q }) : { reply: 'Focus on core rules.' };
+
+    if (window.Notifications) {
+      Notifications.openModal('💡 NexaAI Conceptual Hint', `
+        <div style="padding:0.5rem; font-size:0.9rem; color:var(--text-primary); line-height:1.5;">
+          ${hintRes.reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}
+        </div>
+      `, `<button class="btn btn-secondary" onclick="Notifications.closeModal()">Got it</button>`);
+    }
   }
 
   executeNexaAction(actionType, targetTopicId) {
