@@ -1,135 +1,180 @@
 /* ============================================================
-   EDUNEXUS — AUTHENTICATION & ROLE MANAGEMENT MODULE
+   EDUNEXUS — AUTHENTICATION & ROLE SESSION MANAGER
    ============================================================ */
-
-const SESSION_KEY = 'edunexus_current_user';
 
 class AuthManager {
   constructor() {
-    this.currentUser = this.loadSession();
+    this.sessionKey = 'edunexus_current_user';
   }
 
-  loadSession() {
+  getCurrentUser() {
     try {
-      const data = localStorage.getItem(SESSION_KEY);
+      const data = localStorage.getItem(this.sessionKey);
       return data ? JSON.parse(data) : null;
     } catch (e) {
+      console.error('Error fetching session', e);
       return null;
     }
   }
 
-  getCurrentUser() {
-    return this.currentUser;
+  setCurrentUser(user) {
+    try {
+      localStorage.setItem(this.sessionKey, JSON.stringify(user));
+    } catch (e) {
+      console.error('Error saving session', e);
+    }
   }
 
-  isLoggedIn() {
-    return !!this.currentUser;
+  /**
+   * Triggers the Logout Confirmation Modal Overlay
+   */
+  confirmLogout() {
+    const body = `
+      <div style="text-align: center; padding: 0.5rem 0;">
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">🚪</div>
+        <h3 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.35rem;">Log out of EduNexus?</h3>
+        <p class="text-xs text-secondary">Are you sure you want to end your current session?</p>
+      </div>
+    `;
+
+    const footer = `
+      <button class="btn btn-secondary" onclick="Notifications.closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="Notifications.closeModal(); Auth.logout();">Confirm Logout</button>
+    `;
+
+    Notifications.openModal('Log Out', body, footer);
   }
 
+  /**
+   * Clears ONLY active user session and redirects to Login Page
+   */
+  logout() {
+    localStorage.removeItem(this.sessionKey);
+    if (window.Notifications) {
+      Notifications.toast('Logged out successfully.', 'info');
+    }
+    if (window.Router) {
+      Router.navigate('/login');
+    }
+  }
+
+  /**
+   * PROTOTYPE FLEXIBLE AUTHENTICATION ENGINE (FOR COLLEGE DEMO & PROTOTYPE)
+   * 
+   * NOTE FOR FUTURE BACKEND INTEGRATION:
+   * This flexible authentication logic allows entering any non-empty ID and password
+   * for demo presentation purposes.
+   * When integrating a production backend, replace this function with API token validation
+   * and server-side role authorization checks.
+   */
   login(role, userId, password) {
-    if (!userId || !password) {
-      return { success: false, message: 'Please enter User ID and Password.' };
+    const cleanId = (userId || '').trim();
+    const cleanPass = (password || '').trim();
+    const cleanRole = (role || 'student').toLowerCase();
+
+    // 1. Empty Input Validation
+    if (!cleanId && !cleanPass) {
+      return { success: false, message: 'Please enter your ID and password.' };
+    }
+    if (!cleanId) {
+      return { success: false, message: 'Please enter your ID.' };
+    }
+    if (!cleanPass) {
+      return { success: false, message: 'Please enter your password.' };
     }
 
-    const user = Storage.getUserById(userId.trim());
+    // 2. Session Data & Profile Resolution
+    // If an existing stored user matches the ID, use their existing profile data.
+    let user = Storage.getUserById(cleanId);
 
-    if (!user) {
-      return { success: false, message: 'Invalid credentials.' };
+    if (!user || user.role.toLowerCase() !== cleanRole) {
+      // Create a prototype session user object with the typed identifier
+      user = {
+        id: cleanId,
+        name: cleanId,
+        role: cleanRole,
+        schoolCode: 'ECB',
+        institution: 'Engineering College Bikaner',
+        rollNumber: cleanId.replace(/\D/g, '') || '0245',
+        branch: cleanRole === 'teacher' ? 'Database Systems' : 'Computer Science',
+        year: 'Undergraduate',
+        semester: 'Semester 3',
+        classId: 'Sec-A',
+        streakDays: 5,
+        achievements: ['first_quiz'],
+        mindfulHistory: [],
+        mindfulXP: 0
+      };
     }
 
-    // Role strict check
-    if (user.role.toLowerCase() !== role.toLowerCase()) {
-      return { success: false, message: 'Invalid credentials.' };
-    }
-
-    // Password check
-    if (user.password !== password) {
-      return { success: false, message: 'Invalid credentials.' };
-    }
-
-    // Auth Successful! Store session
-    this.currentUser = {
-      id: user.id,
-      name: user.name,
-      role: user.role,
-      classId: user.classId || null,
-      schoolCode: user.schoolCode || 'ECB',
-      subject: user.subject || null
-    };
-
-    localStorage.setItem(SESSION_KEY, JSON.stringify(this.currentUser));
-    return { success: true, user: this.currentUser };
+    this.setCurrentUser(user);
+    return { success: true, user };
   }
 
+  /**
+   * Student Registration: Auto-generates ID from School Code + Roll Number
+   */
   registerStudent({ fullName, schoolCode, rollNumber, classId, password, confirmPassword }) {
-    if (!fullName || !schoolCode || !rollNumber || !classId || !password) {
-      return { success: false, message: 'All required fields must be filled.' };
-    }
-
     if (password !== confirmPassword) {
       return { success: false, message: 'Passwords do not match.' };
     }
 
-    const generatedId = `${schoolCode.toUpperCase()}${rollNumber.padStart(4, '0')}`;
+    const cleanSchool = schoolCode.trim().toUpperCase();
+    const cleanRoll = rollNumber.trim().padStart(4, '0');
+    const generatedId = `${cleanSchool}${cleanRoll}`;
 
     if (Storage.getUserById(generatedId)) {
-      return { success: false, message: `An account with ID ${generatedId} already exists.` };
+      return { success: false, message: `Student ID ${generatedId} already exists.` };
     }
 
     const newStudent = {
       id: generatedId,
-      name: fullName.trim(),
+      name: fullName,
       role: 'student',
-      password: password,
-      schoolCode: schoolCode.toUpperCase(),
-      rollNumber: rollNumber,
-      classId: classId,
+      password,
+      schoolCode: cleanSchool,
+      rollNumber: cleanRoll,
+      classId: classId || 'CSE-3A',
+      branch: 'Computer Science & Engineering',
+      semester: 'Semester 3',
       streakDays: 1,
-      achievements: []
+      achievements: ['first_quiz']
     };
 
     Storage.addUser(newStudent);
-    return { success: true, id: generatedId, message: 'Registration successful! You can now log in.' };
+    return { success: true, id: generatedId };
   }
 
+  /**
+   * Teacher Registration: Auto-generates ID from School Code + Last 4 digits of Mobile Number
+   */
   registerTeacher({ fullName, schoolCode, mobileNumber, subject, password, confirmPassword }) {
-    if (!fullName || !schoolCode || !mobileNumber || !subject || !password) {
-      return { success: false, message: 'All required fields must be filled.' };
-    }
-
     if (password !== confirmPassword) {
       return { success: false, message: 'Passwords do not match.' };
     }
 
-    const last4 = mobileNumber.slice(-4);
-    const generatedId = `${schoolCode.toUpperCase()}${last4}`;
+    const cleanSchool = schoolCode.trim().toUpperCase();
+    const cleanMobile = mobileNumber.trim();
+    const last4 = cleanMobile.slice(-4) || '1234';
+    const generatedId = `${cleanSchool}${last4}`;
 
     if (Storage.getUserById(generatedId)) {
-      return { success: false, message: `A teacher account with ID ${generatedId} already exists.` };
+      return { success: false, message: `Teacher ID ${generatedId} already exists.` };
     }
 
     const newTeacher = {
       id: generatedId,
-      name: fullName.trim(),
+      name: fullName,
       role: 'teacher',
-      password: password,
-      schoolCode: schoolCode.toUpperCase(),
-      mobileNumber: mobileNumber,
-      subject: subject,
-      assignedClasses: ['10-A']
+      password,
+      schoolCode: cleanSchool,
+      mobileNumber: cleanMobile,
+      subject: subject || 'Database Management Systems',
+      assignedClasses: ['CSE-3A']
     };
 
     Storage.addUser(newTeacher);
-    return { success: true, id: generatedId, message: 'Teacher registration successful! You can now log in.' };
-  }
-
-  logout() {
-    this.currentUser = null;
-    localStorage.removeItem(SESSION_KEY);
-    window.location.hash = '#/login';
-    if (window.Router) {
-      window.Router.navigate('/login');
-    }
+    return { success: true, id: generatedId };
   }
 }
 

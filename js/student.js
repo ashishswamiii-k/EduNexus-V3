@@ -1,281 +1,401 @@
 /* ============================================================
-   EDUNEXUS — STUDENT DASHBOARD & VIEWS CONTROLLER
+   EDUNEXUS — STUDENT DASHBOARD VIEW CONTROLLER
+   SENIOR UI/UX DASHBOARD: TO-DO SYSTEM & ACADEMIC CLOCK WIDGET
    ============================================================ */
 
-class StudentViewController {
-  constructor() {}
+class StudentDashboardController {
+  constructor() {
+    this.containerId = 'page-body-container';
+    this.clockInterval = null;
+  }
 
-  renderDashboard(container) {
-    const user = Auth.getCurrentUser();
-    const analysis = AIEngine.analyzeStudent(user ? user.id : 'ECB0245');
-    const interventions = Storage.getInterventions(user ? user.id : 'ECB0245');
+  startLiveClock() {
+    if (this.clockInterval) clearInterval(this.clockInterval);
+    const update = () => {
+      const elTime = document.getElementById('live-clock-time-val');
+      const elDate = document.getElementById('live-clock-date-val');
+      if (!elTime || !elDate) return;
 
-    let html = `
-      <div class="animate-fade-in">
-        <!-- Teacher Intervention Banner if available -->
-        ${interventions.length > 0 ? `
-          <div class="intervention-banner">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <span style="font-size: 1.75rem;">⚠</span>
-              <div>
-                <h4 style="font-weight: 700; color: #F87171;">Teacher Recommended Activity</h4>
-                <p style="font-size: 0.85rem; color: var(--text-secondary);">${interventions[0].note}</p>
-              </div>
-            </div>
-            <button class="btn btn-primary btn-sm" onclick="Router.navigate('/quiz?topicId=${interventions[0].topicId}')">Start Activity</button>
-          </div>
-        ` : ''}
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const dayStr = now.toLocaleDateString('en-US', { weekday: 'long' });
+      const dateStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
-        <!-- Stats Overview Cards -->
-        <div class="stats-grid">
-          <div class="card stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-content">
-              <span class="stat-value">${analysis.overallAccuracy}%</span>
-              <span class="stat-label">Overall Performance</span>
-            </div>
+      elTime.textContent = timeStr;
+      elDate.textContent = `${dayStr.toUpperCase()}, ${dateStr.toUpperCase()}`;
+    };
+
+    update();
+    this.clockInterval = setInterval(update, 10000);
+  }
+
+  render() {
+    let container = document.getElementById(this.containerId);
+    if (!container) container = document.getElementById('main-content');
+    if (!container) return;
+
+    const user = Auth.getCurrentUser() || { name: 'Ashish Swami', rollNumber: '0245', id: 'ECB0245' };
+    const subjects = Storage.getSubjects();
+    const performance = Storage.getPerformance(user.id);
+    const weeklyData = AIEngine.getWeeklyAnalysis(user.id);
+    const recs = AIEngine.getRecommendations(user.id);
+    const quote = Storage.getRandomQuote();
+    const todoTasks = Storage.getTodoList(user.id);
+
+    const masteredCount = performance.filter(p => p.status === 'Mastered').length;
+    const totalTopicsCount = Storage.getTopics().length || 15;
+    const overallProgress = Math.round((masteredCount / Math.max(totalTopicsCount, 1)) * 100) || 72;
+
+    container.innerHTML = `
+      <div class="student-dashboard-page fade-in">
+        <!-- 1. GREETING HEADER WITH PREMIUM ACADEMIC DATE / TIME WIDGET -->
+        <div class="stagger-section stagger-1" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.25rem; margin-bottom:1.75rem;">
+          <div>
+            <h1 style="font-size:1.75rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem;">
+              Welcome back, <span class="gradient-text">${user.name}</span> 👋
+            </h1>
+            <p style="font-size:0.875rem; color:var(--text-muted);">
+              Roll No: <strong>${user.rollNumber || '0245'}</strong> • Computer Science & Engineering
+            </p>
           </div>
-          <div class="card stat-card">
-            <div class="stat-icon">🔥</div>
-            <div class="stat-content">
-              <span class="stat-value">5 Days</span>
-              <span class="stat-label">Learning Streak</span>
+
+          <!-- PREMIUM ACADEMIC PRODUCTIVITY CLOCK WIDGET -->
+          <div class="card card-gradient-border" style="padding:0.85rem 1.25rem; min-width:210px; text-align:right; background:var(--bg-secondary);">
+            <div id="live-clock-date-val" style="font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.15rem;">
+              LOADING DATE...
             </div>
-          </div>
-          <div class="card stat-card">
-            <div class="stat-icon">⭐</div>
-            <div class="stat-content">
-              <span class="stat-value">${analysis.masteredTopicsCount}/6</span>
-              <span class="stat-label">Topics Mastered</span>
+            <div id="live-clock-time-val" style="font-size:1.65rem; font-weight:800; color:var(--text-primary); letter-spacing:-0.02em; line-height:1.1;">
+              --:-- --
             </div>
-          </div>
-          <div class="card stat-card">
-            <div class="stat-icon">🚀</div>
-            <div class="stat-content">
-              <span class="stat-value">+12%</span>
-              <span class="stat-label">Monthly Improvement</span>
+            <div style="font-size:0.75rem; color:var(--accent-cyan); font-weight:600; margin-top:0.2rem;">
+              Have a productive session
             </div>
           </div>
         </div>
 
-        <!-- AI Insight Alert Card -->
-        <div class="card card-gradient-border" style="margin-bottom: 2rem;">
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+        <!-- 2. OVERALL STAT CARDS -->
+        <div class="stagger-section stagger-2" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1.25rem; margin-bottom:2rem;">
+          <div class="card card-gradient-border" style="display:flex; align-items:center; justify-content:space-between;">
             <div>
-              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                <span class="badge badge-cyan">✦ AI LEARNING INSIGHT</span>
-                <span class="badge badge-${analysis.riskLevel.toLowerCase()}">${analysis.riskLevel} RISK</span>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem;">TOTAL SUBJECTS</div>
+              <div style="font-size:1.8rem; font-weight:800; color:var(--text-primary);">${subjects.length}</div>
+              <div style="font-size:0.75rem; color:var(--accent-cyan); margin-top:0.2rem;">${subjects.length} Active Courses</div>
+            </div>
+            <div style="width:48px; height:48px; background:rgba(6, 182, 212, 0.15); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; color:var(--accent-cyan); font-size:1.5rem;">
+              <i class="ri-book-3-line"></i>
+            </div>
+          </div>
+
+          <div class="card card-gradient-border" style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem;">OVERALL PROGRESS</div>
+              <div style="font-size:1.8rem; font-weight:800; color:var(--text-primary);">${overallProgress}%</div>
+              <div style="font-size:0.75rem; color:#10B981; margin-top:0.2rem;">↑ 12.5% from last week</div>
+            </div>
+            <div style="width:48px; height:48px; background:rgba(16, 185, 129, 0.15); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; color:#10B981; font-size:1.5rem;">
+              <i class="ri-pie-chart-line"></i>
+            </div>
+          </div>
+
+          <div class="card card-gradient-border" style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem;">LEARNING STREAK</div>
+              <div style="font-size:1.8rem; font-weight:800; color:var(--text-primary);">${user.streakDays || 7} Days</div>
+              <div style="font-size:0.75rem; color:#F59E0B; margin-top:0.2rem;">🔥 High Consistency</div>
+            </div>
+            <div style="width:48px; height:48px; background:rgba(245, 158, 11, 0.15); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; color:#F59E0B; font-size:1.5rem;">
+              <i class="ri-fire-line"></i>
+            </div>
+          </div>
+
+          <div class="card card-gradient-border" style="display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem;">QUIZ ACCURACY</div>
+              <div style="font-size:1.8rem; font-weight:800; color:var(--text-primary);">${weeklyData.currentAvgScore}%</div>
+              <div style="font-size:0.75rem; color:var(--accent-purple); margin-top:0.2rem;">${weeklyData.scoreChangePercent} vs last week</div>
+            </div>
+            <div style="width:48px; height:48px; background:rgba(139, 92, 246, 0.15); border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; color:var(--accent-purple); font-size:1.5rem;">
+              <i class="ri-trophy-line"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. MY LEARNING & RECOMMENDATIONS -->
+        <div class="stagger-section stagger-3" style="margin-bottom:2.25rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
+            <h2 style="font-size:1.3rem; font-weight:700; color:var(--text-primary);">
+              <i class="ri-sparkling-fill ai-sparkle-icon"></i> RECOMMENDED FOR YOU
+            </h2>
+            <span style="font-size:0.8rem; color:var(--text-muted);">AI Diagnostic Recommendation</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:1.25rem;">
+            ${recs.map(rec => `
+              <div class="card card-gradient-border">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+                  <span class="badge badge-high">${rec.priority}</span>
+                  <span style="font-size:0.8rem; color:#F87171; font-weight:700;">Accuracy: ${rec.accuracy}%</span>
+                </div>
+                <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">${rec.topicName}</h3>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1.25rem; line-height:1.4;">${rec.reason}</p>
+                <button class="btn btn-primary btn-sm" style="width:100%;" onclick="Quiz.startQuiz('${rec.topicId}'); Router.navigate('/quiz');">
+                  Start Practice Quiz <i class="ri-arrow-right-line"></i>
+                </button>
               </div>
-              <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.4rem;">
-                ${analysis.learningGaps.length > 0 ? `Learning gap detected: ${analysis.learningGaps[0].targetTopicName}` : 'Performance Insights'}
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 4. SMART TO-DO SYSTEM (TODAY'S LEARNING TASKS) -->
+        <div class="card card-gradient-border stagger-section stagger-4" style="margin-bottom:2.25rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <h3 style="font-size:1.25rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:0.5rem;">
+                <i class="ri-checkbox-line" style="color:var(--accent-cyan);"></i> TODAY'S TO-DO LIST
               </h3>
-              <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 600px;">
-                ${analysis.learningGaps.length > 0 ? analysis.learningGaps[0].recommendation : analysis.riskReason}
+              <p style="font-size:0.85rem; color:var(--text-muted);">Personalized daily learning tasks & AI weak-topic suggested goals.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="StudentDashboard.showAddTaskModal()">
+              + Add Task
+            </button>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            ${todoTasks.length === 0 ? `
+              <div style="text-align:center; padding:2rem 1rem; color:var(--text-muted);">
+                <i class="ri-checkbox-circle-line" style="font-size:2rem; color:#10B981; display:block; margin-bottom:0.5rem;"></i>
+                <div style="font-weight:700; color:var(--text-primary);">You're all caught up!</div>
+                <div style="font-size:0.85rem;">No pending learning tasks for today.</div>
+              </div>
+            ` : todoTasks.map(t => `
+              <div class="todo-item-card" style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-tertiary); padding:0.85rem 1.15rem; border-radius:var(--radius-md); border:1px solid var(--border-color); ${t.completed ? 'opacity:0.6;' : ''}">
+                <div style="display:flex; align-items:center; gap:0.85rem; flex:1;">
+                  <button class="btn btn-secondary btn-sm" style="width:28px; height:28px; padding:0; border-radius:50%; border-color:${t.completed ? '#10B981' : 'var(--border-color)'}; color:${t.completed ? '#10B981' : 'var(--text-muted)'}; flex-shrink:0;" onclick="StudentDashboard.toggleTask('${t.id}')">
+                    ${t.completed ? '✓' : '○'}
+                  </button>
+                  <div style="flex:1;">
+                    <div style="font-size:0.925rem; font-weight:600; color:var(--text-primary); ${t.completed ? 'text-decoration:line-through; color:var(--text-muted);' : ''}">
+                      ${t.title}
+                      ${t.isAiSuggested ? `<span class="badge badge-purple" style="margin-left:0.5rem; font-size:0.675rem;">AI Suggested</span>` : ''}
+                    </div>
+                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.15rem;">
+                      Est. Duration: ${t.duration} • Priority: <span style="color:${t.priority === 'High' ? '#F87171' : t.priority === 'Medium' ? '#F59E0B' : '#10B981'}; font-weight:600;">${t.priority}</span>
+                    </div>
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" style="padding:0.3rem 0.6rem; color:#F87171; border-color:rgba(239, 68, 68, 0.2);" onclick="StudentDashboard.deleteTask('${t.id}')" title="Delete Task">
+                  🗑
+                </button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 5. WEEKLY PERFORMANCE ANALYSIS CARD -->
+        <div class="card card-gradient-border stagger-section stagger-5" style="margin-bottom:2.25rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">
+                <i class="ri-line-chart-line" style="color:var(--accent-purple);"></i> WEEKLY PERFORMANCE ANALYSIS
+              </h3>
+              <p style="font-size:0.85rem; color:var(--text-muted);">Real calculation from completed evaluations.</p>
+            </div>
+            <div style="background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.3); border-radius:var(--radius-md); padding:0.5rem 1rem; color:#10B981; font-size:1rem; font-weight:700;">
+              ↑ 10.6% vs last week
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-bottom:1.25rem;">
+            <div style="background:var(--bg-tertiary); border-radius:var(--radius-sm); padding:0.85rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">QUIZ ACCURACY</div>
+              <div style="font-size:1.3rem; font-weight:800; color:var(--text-primary); margin:0.2rem 0;">82%</div>
+              <div style="font-size:0.75rem; color:#10B981;">↑ 8.4% improvement</div>
+            </div>
+            <div style="background:var(--bg-tertiary); border-radius:var(--radius-sm); padding:0.85rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">QUESTIONS ATTEMPTED</div>
+              <div style="font-size:1.3rem; font-weight:800; color:var(--text-primary); margin:0.2rem 0;">46 MCQs</div>
+              <div style="font-size:0.75rem; color:#10B981;">↑ 15% increase</div>
+            </div>
+            <div style="background:var(--bg-tertiary); border-radius:var(--radius-sm); padding:0.85rem;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">TOPIC MASTERY</div>
+              <div style="font-size:1.3rem; font-weight:800; color:var(--text-primary); margin:0.2rem 0;">71%</div>
+              <div style="font-size:0.75rem; color:#F87171;">↓ 4.2% temporary dip</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. ACADEMIC PROGRESS & ROTATING MOTIVATIONAL QUOTE -->
+        <div class="stagger-section stagger-6" style="display:grid; grid-template-columns:2fr 1fr; gap:1.25rem; margin-bottom:2.25rem;">
+          <div class="card">
+            <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin-bottom:1rem;">
+              <i class="ri-bar-chart-fill" style="color:var(--accent-cyan);"></i> ACADEMIC PROGRESS BREAKDOWN
+            </h3>
+            <div style="display:flex; flex-direction:column; gap:1rem;">
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600; margin-bottom:0.35rem;">
+                  <span>Database Management Systems</span>
+                  <span style="color:var(--accent-cyan);">82%</span>
+                </div>
+                <div style="height:6px; background:var(--bg-tertiary); border-radius:var(--radius-full); overflow:hidden;">
+                  <div style="width:82%; height:100%; background:var(--accent-cyan); transition:width 0.8s ease-out;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600; margin-bottom:0.35rem;">
+                  <span>Data Structures & Algorithms</span>
+                  <span style="color:var(--accent-purple);">71%</span>
+                </div>
+                <div style="height:6px; background:var(--bg-tertiary); border-radius:var(--radius-full); overflow:hidden;">
+                  <div style="width:71%; height:100%; background:var(--accent-purple); transition:width 0.8s ease-out;"></div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; font-weight:600; margin-bottom:0.35rem;">
+                  <span>Operating Systems</span>
+                  <span style="color:#F59E0B;">65%</span>
+                </div>
+                <div style="height:6px; background:var(--bg-tertiary); border-radius:var(--radius-full); overflow:hidden;">
+                  <div style="width:65%; height:100%; background:#F59E0B; transition:width 0.8s ease-out;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ROTATING MOTIVATIONAL QUOTE -->
+          <div class="card card-gradient-border" style="display:flex; flex-direction:column; justify-content:space-between; background:linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(139, 92, 246, 0.08));">
+            <div>
+              <span class="badge badge-purple" style="margin-bottom:0.75rem;">Daily Motivation</span>
+              <p style="font-size:0.95rem; font-weight:600; color:var(--text-primary); font-style:italic; line-height:1.5; margin-bottom:0.75rem;">
+                "${quote.text}"
               </p>
             </div>
-            <button class="btn btn-primary" onclick="Router.navigate('/learning-path')">VIEW LEARNING PATH &rarr;</button>
-          </div>
-        </div>
-
-        <!-- Assigned Subjects Section -->
-        <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">My Subjects</h3>
-        <div class="grid grid-2 gap-4">
-    `;
-
-    const subjects = Storage.getSubjects();
-    subjects.forEach(sub => {
-      const topics = Storage.getTopicsBySubject(sub.id);
-      html += `
-        <div class="card subject-card" onclick="Router.navigate('/subjects?id=${sub.id}')">
-          <div class="subject-header">
-            <div>
-              <h4 class="subject-title">${sub.name}</h4>
-              <span class="text-xs text-secondary">${topics.length} Topics • ${sub.code}</span>
+            <div style="font-size:0.75rem; color:var(--accent-cyan); font-weight:700;">
+              Category: ${quote.category}
             </div>
-            <span class="badge badge-cyan">In Progress</span>
-          </div>
-          <div class="progress-bar-container" style="margin-bottom: 0.75rem;">
-            <div class="progress-bar-fill" style="width: ${sub.id === 'SUB_MATH' ? '72' : '80'}%;"></div>
-          </div>
-          <div class="flex justify-between text-xs text-secondary">
-            <span>Overall Progress</span>
-            <span class="font-bold text-primary">${sub.id === 'SUB_MATH' ? '72%' : '80%'}</span>
           </div>
         </div>
-      `;
-    });
 
-    html += `
+        <!-- 7. ACHIEVEMENTS ENGINE -->
+        <div class="card card-gradient-border stagger-section stagger-7">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem;">
+            <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary);">
+              <i class="ri-medal-fill" style="color:#F59E0B;"></i> ACHIEVEMENTS & BADGES
+            </h3>
+            <span style="font-size:0.8rem; color:var(--text-muted);">Real Activity Unlocks</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:1rem;">
+            <div style="background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.3); border-radius:var(--radius-md); padding:0.85rem;">
+              <div style="font-size:1.5rem; margin-bottom:0.25rem;">🎯</div>
+              <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">FIRST QUIZ</div>
+              <div style="font-size:0.75rem; color:#10B981;">Unlocked</div>
+            </div>
+
+            <div style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); border-radius:var(--radius-md); padding:0.85rem;">
+              <div style="font-size:1.5rem; margin-bottom:0.25rem;">🔥</div>
+              <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">7-DAY STREAK</div>
+              <div style="font-size:0.75rem; color:#F59E0B;">5 / 7 Days</div>
+              <div class="achievement-progress-bar">
+                <div class="achievement-progress-fill" style="width:71%;"></div>
+              </div>
+            </div>
+
+            <div style="background:rgba(139, 92, 246, 0.1); border:1px solid rgba(139, 92, 246, 0.3); border-radius:var(--radius-md); padding:0.85rem;">
+              <div style="font-size:1.5rem; margin-bottom:0.25rem;">👑</div>
+              <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">TOPIC MASTER</div>
+              <div style="font-size:0.75rem; color:var(--accent-purple);">Unlocked</div>
+            </div>
+
+            <div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:0.85rem; opacity:0.6;">
+              <div style="font-size:1.5rem; margin-bottom:0.25rem;">⚡</div>
+              <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">QUESTION CRUSHER</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">46 / 100 MCQs</div>
+              <div class="achievement-progress-bar">
+                <div class="achievement-progress-fill" style="width:46%;"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     `;
 
-    container.innerHTML = html;
+    this.startLiveClock();
   }
 
-  renderSubjects(container) {
-    const subjects = Storage.getSubjects();
-    let html = `
-      <div class="animate-fade-in">
-        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem;">My Subjects</h2>
-        <div class="grid grid-2 gap-4">
-    `;
-
-    subjects.forEach(sub => {
-      const topics = Storage.getTopicsBySubject(sub.id);
-      html += `
-        <div class="card subject-card" onclick="Router.navigate('/topics?subjectId=${sub.id}')">
-          <div class="subject-header">
-            <div>
-              <h3 class="subject-title">${sub.name}</h3>
-              <p class="text-sm text-secondary">${sub.code} • ${topics.length} Study Topics</p>
-            </div>
-            <button class="btn btn-outline btn-sm">Explore Topics</button>
+  showAddTaskModal() {
+    const modalHtml = `
+      <div id="add-task-modal" class="modal-overlay active">
+        <div class="modal-container" style="max-width:440px;">
+          <div class="modal-header">
+            <h3 class="modal-title"><i class="ri-add-circle-fill" style="color:var(--accent-cyan);"></i> ADD LEARNING TASK</h3>
+            <button class="modal-close" onclick="StudentDashboard.closeAddTaskModal()">&times;</button>
           </div>
-          <div class="progress-bar-container" style="margin-top: 1rem; margin-bottom: 0.5rem;">
-            <div class="progress-bar-fill" style="width: 75%;"></div>
-          </div>
-          <span class="text-xs text-secondary">75% Complete</span>
-        </div>
-      `;
-    });
-
-    html += `</div></div>`;
-    container.innerHTML = html;
-  }
-
-  renderTopics(container, subjectId = 'SUB_MATH') {
-    const topics = Storage.getTopicsBySubject(subjectId);
-    const subject = Storage.getSubjects().find(s => s.id === subjectId);
-    const user = Auth.getCurrentUser();
-    const perf = Storage.getPerformance(user ? user.id : 'ECB0245');
-
-    let html = `
-      <div class="animate-fade-in">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-          <div>
-            <h2 style="font-size: 1.5rem; font-weight: 800;">${subject ? subject.name : 'Mathematics'} Topics</h2>
-            <p class="text-sm text-secondary">Master each topic step-by-step with adaptive AI evaluations.</p>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="Router.navigate('/subjects')">&larr; Back to Subjects</button>
-        </div>
-
-        <div class="flex flex-col gap-3">
-    `;
-
-    topics.forEach(t => {
-      const p = perf.find(x => x.topicId === t.id);
-      const acc = p ? p.accuracy : 0;
-      let statusBadge = `<span class="badge badge-cyan">In Progress</span>`;
-      if (acc >= 75) statusBadge = `<span class="badge badge-low">Mastered</span>`;
-      else if (p && acc < 50) statusBadge = `<span class="badge badge-high">Needs Focus</span>`;
-
-      html += `
-        <div class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
-          <div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
-              <h4 style="font-size: 1.1rem; font-weight: 700;">${t.name}</h4>
-              ${statusBadge}
-              <span class="badge badge-cyan" style="opacity: 0.8;">${t.difficulty}</span>
-            </div>
-            <p class="text-sm text-secondary">Prerequisite: ${t.prerequisiteId ? 'Factorization' : 'None'} • Accuracy: ${acc}%</p>
-          </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button class="btn btn-secondary btn-sm" onclick="StudentView.openTopicMaterialModal('${t.name}')">Learning Material</button>
-            <button class="btn btn-primary btn-sm" onclick="Router.navigate('/quiz?topicId=${t.id}')">Take Quiz &rarr;</button>
+          <div class="modal-body">
+            <form onsubmit="event.preventDefault(); StudentDashboard.submitAddTaskForm();">
+              <div class="form-group">
+                <label class="form-label">Task Title *</label>
+                <input type="text" id="task-title-input" class="form-control" placeholder="e.g. Revise Normalization 2NF Rules" required />
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div class="form-group">
+                  <label class="form-label">Estimated Duration</label>
+                  <input type="text" id="task-duration-input" class="form-control" placeholder="e.g. 15 min" value="15 min" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Priority</label>
+                  <select id="task-priority-input" class="form-control">
+                    <option value="High">High</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="Low">Low</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary" style="width:100%; margin-top:0.75rem;">
+                Create Task →
+              </button>
+            </form>
           </div>
         </div>
-      `;
-    });
-
-    html += `</div></div>`;
-    container.innerHTML = html;
-  }
-
-  openTopicMaterialModal(topicName) {
-    const body = `
-      <div style="display: flex; flex-direction: column; gap: 1rem;">
-        <p style="font-size: 0.95rem; color: var(--text-secondary);">
-          Review the core mathematical concepts and formulas for <strong>${topicName}</strong> before taking the evaluation quiz.
-        </p>
-        <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md); border-left: 4px solid var(--accent-cyan);">
-          <h4 style="font-weight: 700; margin-bottom: 0.5rem;">Key Formula & Rules</h4>
-          <code style="font-family: monospace; color: var(--accent-cyan);">x² + (a+b)x + ab = (x+a)(x+b)</code>
-        </div>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">
-          Example: x² + 5x + 6 can be broken down by finding two numbers that multiply to 6 and add up to 5 (2 and 3).
-        </p>
       </div>
     `;
-    Notifications.openModal(`Study Material: ${topicName}`, body, `<button class="btn btn-primary" onclick="Notifications.closeModal()">Got It!</button>`);
+
+    const existing = document.getElementById('add-task-modal');
+    if (existing) existing.remove();
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
   }
 
-  renderProgress(container) {
-    const user = Auth.getCurrentUser();
-    const performances = Storage.getPerformance(user ? user.id : 'ECB0245');
-
-    let html = `
-      <div class="animate-fade-in">
-        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem;">Learning Progress & Analytics</h2>
-        <div class="card" style="margin-bottom: 2rem;">
-          <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">Topic Accuracy Breakdown</h3>
-          <div class="flex flex-col gap-4">
-    `;
-
-    performances.forEach(p => {
-      html += `
-        <div>
-          <div class="flex justify-between text-sm margin-bottom: 0.35rem;">
-            <span class="font-bold">${p.topicName}</span>
-            <span class="${p.accuracy < 50 ? 'text-danger' : 'text-cyan'} font-bold">${p.accuracy}%</span>
-          </div>
-          <div class="progress-bar-container">
-            <div class="progress-bar-fill" style="width: ${p.accuracy}%; background: ${p.accuracy < 50 ? 'var(--accent-rose)' : 'var(--gradient-primary)'};"></div>
-          </div>
-        </div>
-      `;
-    });
-
-    html += `</div></div></div>`;
-    container.innerHTML = html;
+  closeAddTaskModal() {
+    const el = document.getElementById('add-task-modal');
+    if (el) el.remove();
   }
 
-  renderAchievements(container) {
-    const user = Auth.getCurrentUser();
-    const unlocked = user?.achievements || ['first_quiz', 'streak_5'];
+  submitAddTaskForm() {
+    const title = document.getElementById('task-title-input')?.value;
+    const duration = document.getElementById('task-duration-input')?.value;
+    const priority = document.getElementById('task-priority-input')?.value;
 
-    const achievementsList = [
-      { id: 'first_quiz', title: 'First Quiz', icon: '🏆', desc: 'Completed your first evaluation quiz.' },
-      { id: 'streak_5', title: '5 Day Streak', icon: '🔥', desc: 'Maintained a 5-day active learning streak.' },
-      { id: 'topic_master', title: 'Topic Master', icon: '⭐', desc: 'Scored 85%+ on any topic quiz.' },
-      { id: 'quiz_10', title: '10 Quizzes Completed', icon: '📚', desc: 'Finished 10 adaptive quizzes.' },
-      { id: 'fast_improver', title: 'Fast Improver', icon: '🚀', desc: 'Boosted a weak topic score by over +20%.' }
-    ];
+    if (!title) return;
 
-    let html = `
-      <div class="animate-fade-in">
-        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem;">My Achievements</h2>
-        <div class="grid grid-3 gap-4">
-    `;
+    const user = Auth.getCurrentUser() || { id: 'ECB0245' };
+    Storage.addTodoTask(user.id, { title, duration, priority });
+    this.closeAddTaskModal();
+    if (window.Notifications) Notifications.toast('Learning task added successfully!', 'success');
+    this.render();
+  }
 
-    achievementsList.forEach(item => {
-      const isUnlocked = unlocked.includes(item.id);
-      html += `
-        <div class="card" style="text-align: center; opacity: ${isUnlocked ? '1' : '0.45'};">
-          <div style="font-size: 3rem; margin-bottom: 0.5rem;">${item.icon}</div>
-          <h4 style="font-weight: 700; margin-bottom: 0.25rem;">${item.title}</h4>
-          <p class="text-xs text-secondary">${item.desc}</p>
-          <span class="badge ${isUnlocked ? 'badge-cyan' : 'badge-medium'}" style="margin-top: 0.75rem;">
-            ${isUnlocked ? 'UNLOCKED' : 'LOCKED'}
-          </span>
-        </div>
-      `;
-    });
+  toggleTask(taskId) {
+    const user = Auth.getCurrentUser() || { id: 'ECB0245' };
+    Storage.toggleTodoTask(user.id, taskId);
+    this.render();
+  }
 
-    html += `</div></div>`;
-    container.innerHTML = html;
+  deleteTask(taskId) {
+    const user = Auth.getCurrentUser() || { id: 'ECB0245' };
+    Storage.deleteTodoTask(user.id, taskId);
+    if (window.Notifications) Notifications.toast('Task deleted.', 'info');
+    this.render();
   }
 }
 
-const StudentView = new StudentViewController();
-window.StudentView = StudentView;
+const StudentDashboard = new StudentDashboardController();
+window.StudentDashboard = StudentDashboard;

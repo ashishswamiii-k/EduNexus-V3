@@ -1,109 +1,128 @@
 /* ============================================================
-   EDUNEXUS — TEACHER DASHBOARD & INTERVENTION CONTROLLER
+   EDUNEXUS — TEACHER DASHBOARD & EARLY INTERVENTION CONTROLLER
    ============================================================ */
 
 class TeacherViewController {
   constructor() {}
 
   renderDashboard(container) {
-    const users = Storage.getUsers().filter(u => u.role === 'student');
-    const teacher = Auth.getCurrentUser();
+    const user = Auth.getCurrentUser();
+    const teacherName = user ? user.name : 'Dr. R.K. Mehta';
 
     let html = `
-      <div class="animate-fade-in">
-        <!-- Overview Stats -->
-        <div class="stats-grid">
-          <div class="card stat-card">
-            <div class="stat-icon">👥</div>
-            <div class="stat-content">
-              <span class="stat-value">${users.length}</span>
-              <span class="stat-label">Total Assigned Students</span>
-            </div>
-          </div>
+      <div class="stagger-section stagger-1">
+        <!-- HEADER -->
+        <div style="margin-bottom: 1.75rem;">
+          <h2 style="font-size: 1.6rem; font-weight: 800;">Student Performance & Early Intervention Overview</h2>
+          <p class="text-sm text-secondary">Academic Performance & AI Early Intervention Hub • Instructor: ${teacherName}</p>
+        </div>
+
+        <!-- STAT CARDS -->
+        <div class="stats-grid" style="margin-bottom: 2rem;">
           <div class="card stat-card">
             <div class="stat-icon">📊</div>
             <div class="stat-content">
-              <span class="stat-value">72%</span>
+              <span class="stat-value">74%</span>
               <span class="stat-label">Class Average Score</span>
             </div>
           </div>
           <div class="card stat-card">
-            <div class="stat-icon">📈</div>
+            <div class="stat-icon">👨‍🎓</div>
             <div class="stat-content">
-              <span class="stat-value">18</span>
-              <span class="stat-label">Students Improving</span>
+              <span class="stat-value">62</span>
+              <span class="stat-label">Enrolled Students</span>
             </div>
           </div>
           <div class="card stat-card">
-            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.12); color: var(--accent-rose);">⚠</div>
+            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.12); color: #F87171;">⚠️</div>
             <div class="stat-content">
-              <span class="stat-value" style="color: #F87171;">1</span>
-              <span class="stat-label">High Risk (Needs Intervention)</span>
+              <span class="stat-value text-danger">8</span>
+              <span class="stat-label">Needing Attention</span>
+            </div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-icon">📉</div>
+            <div class="stat-content">
+              <span class="stat-value" style="font-size: 1.1rem; font-weight: 700; color: var(--accent-amber);">DBMS Normalization</span>
+              <span class="stat-label">Weakest Topic</span>
             </div>
           </div>
         </div>
 
-        <!-- Roster Controls & Filters -->
-        <div class="card" style="margin-bottom: 1.5rem;">
-          <div class="flex justify-between items-center gap-4 flex-wrap">
-            <h3 style="font-size: 1.15rem; font-weight: 700;">Student Performance Roster</h3>
-            <div class="flex items-center gap-3">
-              <div class="search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="teacher-student-search" class="form-control" placeholder="Search student name or ID..." onkeyup="TeacherView.filterRoster()">
+        <!-- AI EARLY INTERVENTION CARD -->
+        <div class="card card-gradient-border" style="margin-bottom: 2rem;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <span class="badge badge-cyan"><span class="ai-sparkle-icon">✦</span> AI EARLY INTERVENTION ALERT</span>
               </div>
-              <select id="teacher-risk-filter" class="form-control form-select" style="max-width: 160px;" onchange="TeacherView.filterRoster()">
-                <option value="ALL">All Risk Levels</option>
-                <option value="HIGH">High Risk</option>
-                <option value="MEDIUM">Medium Risk</option>
-                <option value="LOW">Low Risk</option>
-              </select>
+              <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.4rem;">
+                8 students are struggling with DBMS Normalization (2NF & 3NF).
+              </h3>
+              <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 650px;">
+                Suggested Action: Conduct a targeted revision on functional dependency and 2NF partial dependency rules before introducing 3NF/BCNF.
+              </p>
             </div>
+            <button class="btn btn-primary" onclick="TeacherView.openCreateInterventionModal()">
+              Create Intervention &rarr;
+            </button>
           </div>
         </div>
 
-        <!-- Student Roster Data Table -->
-        <div class="card p-0" style="padding: 0; overflow: hidden;">
+        <!-- STUDENT RISK ROSTER TABLE -->
+        <div class="card">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.1rem; font-weight: 700;">Student Academic Risk Roster</h3>
+            <div class="search-box">
+              <input type="text" class="form-control" placeholder="Search student name or ID..." onkeyup="TeacherView.filterRoster(this.value)">
+            </div>
+          </div>
+
           <div class="table-responsive">
-            <table class="data-table" id="teacher-roster-table">
+            <table class="data-table">
               <thead>
                 <tr>
                   <th>Student Name</th>
-                  <th>ID</th>
-                  <th>Class</th>
-                  <th>Average Score</th>
+                  <th>Student ID</th>
+                  <th>Academic Score</th>
                   <th>Weak Topic</th>
-                  <th>AI Risk Level</th>
+                  <th>Risk Status</th>
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody>
-    `;
-
-    users.forEach(student => {
-      const analysis = AIEngine.analyzeStudent(student.id);
-      const weakTopicName = analysis.weakTopics.length > 0 ? analysis.weakTopics[0].topicName : 'None';
-      
-      let badge = `<span class="badge badge-low">LOW</span>`;
-      if (analysis.riskLevel === 'HIGH') badge = `<span class="badge badge-high">HIGH</span>`;
-      if (analysis.riskLevel === 'MEDIUM') badge = `<span class="badge badge-medium">MEDIUM</span>`;
-
-      html += `
-        <tr data-student-id="${student.id}" data-name="${student.name.toLowerCase()}" data-risk="${analysis.riskLevel}">
-          <td><strong style="color: var(--text-primary);">${student.name}</strong></td>
-          <td><code>${student.id}</code></td>
-          <td>${student.classId || '10-A'}</td>
-          <td><span class="font-bold">${analysis.overallAccuracy}%</span></td>
-          <td>${weakTopicName !== 'None' ? `<span style="color: #F87171;">${weakTopicName}</span>` : '<span style="color: #34D399;">Mastered</span>'}</td>
-          <td>${badge}</td>
-          <td>
-            <button class="btn btn-outline btn-sm" onclick="TeacherView.openStudentProfileModal('${student.id}')">View Profile & AI Insights</button>
-          </td>
-        </tr>
-      `;
-    });
-
-    html += `
+              <tbody id="teacher-roster-tbody">
+                <tr>
+                  <td><strong>Ashish Swami</strong></td>
+                  <td>ECB0245</td>
+                  <td><span class="text-danger font-bold">48%</span></td>
+                  <td>DBMS Normalization</td>
+                  <td><span class="badge badge-high">HIGH RISK</span></td>
+                  <td>
+                    <button class="btn btn-secondary btn-sm" onclick="TeacherView.openStudentProfileModal('ECB0245')">Profile</button>
+                    <button class="btn btn-primary btn-sm" onclick="TeacherView.openCreateInterventionModal('ECB0245')">Intervene</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Rohan Sharma</strong></td>
+                  <td>ECB0246</td>
+                  <td><span class="text-warning font-bold">58%</span></td>
+                  <td>CPU Scheduling</td>
+                  <td><span class="badge badge-medium">MEDIUM RISK</span></td>
+                  <td>
+                    <button class="btn btn-secondary btn-sm" onclick="TeacherView.openStudentProfileModal('ECB0246')">Profile</button>
+                    <button class="btn btn-outline btn-sm" onclick="TeacherView.openCreateInterventionModal('ECB0246')">Intervene</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Priya Patel</strong></td>
+                  <td>ECB0247</td>
+                  <td><span class="text-cyan font-bold">81%</span></td>
+                  <td>None</td>
+                  <td><span class="badge badge-low">LOW RISK</span></td>
+                  <td>
+                    <button class="btn btn-secondary btn-sm" onclick="TeacherView.openStudentProfileModal('ECB0247')">Profile</button>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -114,147 +133,82 @@ class TeacherViewController {
     container.innerHTML = html;
   }
 
-  filterRoster() {
-    const searchVal = document.getElementById('teacher-student-search')?.value.toLowerCase() || '';
-    const riskVal = document.getElementById('teacher-risk-filter')?.value || 'ALL';
-    const rows = document.querySelectorAll('#teacher-roster-table tbody tr');
-
-    rows.forEach(row => {
-      const name = row.getAttribute('data-name');
-      const id = row.getAttribute('data-student-id').toLowerCase();
-      const risk = row.getAttribute('data-risk');
-
-      const matchesSearch = name.includes(searchVal) || id.includes(searchVal);
-      const matchesRisk = riskVal === 'ALL' || risk === riskVal;
-
-      if (matchesSearch && matchesRisk) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
-    });
-  }
-
   openStudentProfileModal(studentId) {
-    const student = Storage.getUserById(studentId);
-    if (!student) return;
-
-    const analysis = AIEngine.analyzeStudent(studentId);
-    const performances = Storage.getPerformance(studentId);
-
-    let perfHtml = '';
-    performances.forEach(p => {
-      perfHtml += `
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
-          <span style="font-weight: 600;">${p.topicName}</span>
-          <span class="${p.accuracy < 50 ? 'text-danger' : 'text-cyan'} font-bold">${p.accuracy}%</span>
-        </div>
-      `;
-    });
-
+    const user = Storage.getUserById(studentId);
     const body = `
-      <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="user-avatar" style="width: 50px; height: 50px; font-size: 1.2rem;">${user ? user.name.charAt(0) : 'S'}</div>
           <div>
-            <h3 style="font-size: 1.25rem; font-weight: 700;">${student.name}</h3>
-            <p class="text-xs text-secondary">Student ID: ${student.id} • Class: ${student.classId}</p>
+            <h4 style="font-weight: 700; font-size: 1.1rem;">${user ? user.name : 'Student'}</h4>
+            <p class="text-xs text-secondary">ID: ${studentId} • Course: ${user ? user.branch : 'Computer Science'}</p>
           </div>
-          <span class="badge badge-${analysis.riskLevel.toLowerCase()}">${analysis.riskLevel} RISK</span>
         </div>
-
-        <div style="padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md);">
-          <h4 style="font-size: 0.95rem; font-weight: 700; color: #F87171; margin-bottom: 0.35rem;">✦ AI Early Intervention Analysis</h4>
-          <p style="font-size: 0.85rem; color: var(--text-secondary);">${analysis.riskReason}</p>
-        </div>
-
-        <div>
-          <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem;">Topic Accuracy Breakdown</h4>
-          ${perfHtml}
+        <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+          <h5 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem;">AI Diagnostic Breakdown</h5>
+          <p class="text-xs text-secondary">Prerequisite Gap: <strong>2NF Partial Dependency</strong> in DBMS Normalization.</p>
         </div>
       </div>
     `;
-
-    const footer = `
-      <button class="btn btn-secondary" onclick="Notifications.closeModal()">Close</button>
-      <button class="btn btn-primary" onclick="TeacherView.openCreateInterventionModal('${student.id}')">⚡ CREATE INTERVENTION</button>
-    `;
-
-    Notifications.openModal(`Student Performance Profile`, body, footer);
+    Notifications.openModal('Student Profile & AI Diagnostic', body, `<button class="btn btn-secondary" onclick="Notifications.closeModal()">Close</button>`);
   }
 
-  openCreateInterventionModal(studentId) {
-    const student = Storage.getUserById(studentId);
-    if (!student) return;
-
-    const topics = Storage.getTopics();
-
-    let topicOptionsHtml = '';
-    topics.forEach(t => {
-      topicOptionsHtml += `<option value="${t.id}">${t.name}</option>`;
-    });
-
+  openCreateInterventionModal(studentId = 'ECB0245') {
     const body = `
-      <form id="create-intervention-form" onsubmit="event.preventDefault(); TeacherView.submitIntervention('${studentId}');">
+      <form id="intervention-form" onsubmit="event.preventDefault(); TeacherView.submitIntervention('${studentId}');">
         <div class="form-group">
-          <label class="form-label">Student</label>
-          <input type="text" class="form-control" value="${student.name} (${student.id})" disabled>
+          <label class="form-label">Target Student ID</label>
+          <input type="text" class="form-control" value="${studentId}" readonly>
         </div>
-
         <div class="form-group">
-          <label class="form-label">Target Weak Topic</label>
-          <select id="int-topic-id" class="form-control form-select">
-            ${topicOptionsHtml}
+          <label class="form-label">Weak Topic</label>
+          <select id="int-topic" class="form-control form-select">
+            <option value="TOP_DBMS_NORM">DBMS Normalization</option>
+            <option value="TOP_OS_SCHED">CPU Scheduling Algorithms</option>
+            <option value="TOP_DS_BST">Binary Search Trees & AVL Trees</option>
           </select>
         </div>
-
         <div class="form-group">
-          <label class="form-label">Intervention Action Type</label>
-          <select id="int-type" class="form-control form-select">
-            <option value="Revision">Targeted Prerequisite Revision</option>
-            <option value="Practice">Adaptive Practice Set</option>
-            <option value="Extra Quiz">Remedial Quiz Assessment</option>
-            <option value="Teacher Guidance">1-on-1 Teacher Consultation</option>
-          </select>
+          <label class="form-label">Intervention Guidance / Recommendation</label>
+          <textarea id="int-note" class="form-control" rows="3" required>Please revise Relational Algebra partial dependency rules before taking the DBMS 2NF diagnostic quiz.</textarea>
         </div>
-
-        <div class="form-group">
-          <label class="form-label">Teacher Instructions / Guidance Note</label>
-          <textarea id="int-note" class="form-control" rows="3" placeholder="Provide clear guidance for the student..." required>Please review Factorization fundamentals before re-attempting Quadratic Equations.</textarea>
-        </div>
+        <button type="submit" class="btn btn-primary w-full">Send Intervention Alert</button>
       </form>
     `;
-
-    const footer = `
-      <button class="btn btn-secondary" onclick="Notifications.closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="document.getElementById('create-intervention-form').dispatchEvent(new Event('submit'))">Assign Intervention</button>
-    `;
-
-    Notifications.openModal(`Assign Early Intervention`, body, footer);
+    Notifications.openModal('Create Early Intervention', body, null);
   }
 
   submitIntervention(studentId) {
-    const topicId = document.getElementById('int-topic-id').value;
-    const type = document.getElementById('int-type').value;
+    const topicId = document.getElementById('int-topic').value;
     const note = document.getElementById('int-note').value;
-    const teacher = Auth.getCurrentUser();
-    const topic = Storage.getTopics().find(t => t.id === topicId);
+    const user = Auth.getCurrentUser();
 
-    const intervention = {
+    const topicObj = Storage.getTopics().find(t => t.id === topicId);
+
+    Storage.addIntervention({
       id: 'INT_' + Date.now(),
-      studentId,
-      teacherId: teacher ? teacher.id : 'ECB1234',
-      teacherName: teacher ? teacher.name : 'Demo Teacher',
-      topicId,
-      topicName: topic ? topic.name : 'Target Topic',
-      type,
-      note,
+      studentId: studentId,
+      teacherId: user ? user.id : 'ECB1234',
+      teacherName: user ? user.name : 'Dr. R.K. Mehta',
+      topicId: topicId,
+      topicName: topicObj ? topicObj.name : 'DBMS Normalization',
+      type: 'Prerequisite Recovery',
+      note: note,
       createdAt: new Date().toISOString(),
       status: 'Active'
-    };
+    });
 
-    Storage.addIntervention(intervention);
     Notifications.closeModal();
-    Notifications.toast(`Intervention assigned to student successfully!`, 'success');
+    Notifications.toast('Early Intervention alert sent successfully!', 'success');
+  }
+
+  filterRoster(query) {
+    const q = query.toLowerCase();
+    const rows = document.querySelectorAll('#teacher-roster-tbody tr');
+    rows.forEach(r => {
+      const text = r.textContent.toLowerCase();
+      r.style.display = text.includes(q) ? '' : 'none';
+    });
   }
 }
 

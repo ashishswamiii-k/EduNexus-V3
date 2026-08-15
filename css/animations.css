@@ -1,8 +1,18 @@
 /* ============================================================
-   EDUNEXUS — KEYFRAME ANIMATIONS & EFFECTS
+   EDUNEXUS — PREMIUM KEYFRAME ANIMATIONS & MICRO-INTERACTIONS
    ============================================================ */
 
-/* Cursor Spotlight Radial Overlay */
+/* Fade-In Entrance Utility */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Cursor Spotlight Radial Overlay (Desktop Only) */
 .cursor-spotlight {
   position: fixed;
   top: 0;
@@ -17,103 +27,159 @@
   transition: opacity 0.3s ease;
 }
 
-/* Floating Animation */
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-8px) rotate(1deg); }
-}
-.animate-float {
-  animation: float 4s ease-in-out infinite;
+/* Official Logo Premium Hover & Magnetic Proximity */
+.sidebar-brand img, .auth-brand img, .edunexus-logo-img {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease, box-shadow 0.3s ease;
+  transform-origin: center center;
 }
 
-/* Pulse Glow */
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); }
-  50% { box-shadow: 0 0 30px rgba(6, 182, 212, 0.5); }
-}
-.animate-pulse-glow {
-  animation: pulseGlow 3s infinite ease-in-out;
+.sidebar-brand:hover img, .auth-brand:hover img, .edunexus-logo-img:hover {
+  transform: scale(1.04) translateY(-1px);
+  filter: brightness(1.1) drop-shadow(0 0 12px rgba(6, 182, 212, 0.4));
 }
 
-/* Fade Scale In */
-@keyframes fadeScaleIn {
+/* Single Gentle 👋 Hand Wave */
+@keyframes singleWave {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(14deg); }
+  40% { transform: rotate(-8deg); }
+  60% { transform: rotate(14deg); }
+  80% { transform: rotate(-4deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.wave-hand {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: singleWave 1.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) once;
+}
+
+/* Staggered Dashboard Section Entrance */
+@keyframes staggeredCascade {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(8px);
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translateY(0);
   }
 }
-.animate-fade-in {
-  animation: fadeScaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
 
-/* Loading Spinner */
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: var(--accent-cyan);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-/* Magnetic Logo Hover & Letter Scaling */
-.brand-letter {
-  display: inline-block;
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
-  cursor: pointer;
-}
-
-/* Splash Screen Overlay */
-.splash-screen {
-  position: fixed;
-  inset: 0;
-  background: var(--bg-primary);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  transition: opacity 0.5s ease, visibility 0.5s ease;
-}
-.splash-screen.fade-out {
+.stagger-section {
   opacity: 0;
-  visibility: hidden;
+  animation: staggeredCascade 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Student Reading Book Character Animation */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.19s; }
+.stagger-4 { animation-delay: 0.26s; }
+.stagger-5 { animation-delay: 0.33s; }
+.stagger-6 { animation-delay: 0.40s; }
+.stagger-7 { animation-delay: 0.47s; }
+
+/* AI Sparkle Gently Breathing Icon */
+@keyframes aiSparkleBreathing {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(6, 182, 212, 0.8)); }
+}
+
+.ai-sparkle-icon {
+  display: inline-block;
+  animation: aiSparkleBreathing 3s ease-in-out infinite;
+  color: var(--accent-cyan);
+}
+
+/* AI Recommended Topic Animated Gradient Border */
+@keyframes slowGradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.ai-recommended-glow {
+  position: relative;
+  background-size: 200% 200% !important;
+  animation: slowGradientMove 6s ease infinite;
+}
+
+/* Floating Decorative Elements */
+@keyframes slowFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.floating-decorative-element {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.12;
+  animation: slowFloat 5s ease-in-out infinite;
+  user-select: none;
+}
+
+/* Quiz Question Transition Animations */
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-25px); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(25px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.quiz-slide-in {
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Incorrect Answer Shake */
+@keyframes incorrectShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+}
+
+.option-incorrect {
+  animation: incorrectShake 0.28s ease-in-out;
+  border-color: var(--accent-rose) !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+}
+
+/* Correct Answer Pulse */
+@keyframes correctPulse {
+  0% { transform: scale(0.85); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.option-correct-badge {
+  animation: correctPulse 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: var(--accent-emerald) !important;
+}
+
+/* Achievement Unlocked Sparkle Animation */
+@keyframes achievementPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.achievement-pop {
+  animation: achievementPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Student Reading Character Animation */
 @keyframes walkAndRead {
-  0% {
-    transform: translateX(0px) scaleX(1);
-  }
-  42% {
-    transform: translateX(240px) scaleX(1) rotate(0deg);
-  }
-  46% {
-    transform: translateX(240px) scaleX(1) rotate(180deg);
-  }
-  50% {
-    transform: translateX(240px) scaleX(1) rotate(360deg);
-  }
-  51% {
-    transform: translateX(240px) scaleX(-1);
-  }
-  92% {
-    transform: translateX(0px) scaleX(-1) rotate(0deg);
-  }
-  96% {
-    transform: translateX(0px) scaleX(-1) rotate(180deg);
-  }
-  100% {
-    transform: translateX(0px) scaleX(1) rotate(360deg);
-  }
+  0% { transform: translateX(0px) scaleX(1); }
+  42% { transform: translateX(240px) scaleX(1) rotate(0deg); }
+  46% { transform: translateX(240px) scaleX(1) rotate(180deg); }
+  50% { transform: translateX(240px) scaleX(1) rotate(360deg); }
+  51% { transform: translateX(240px) scaleX(-1); }
+  92% { transform: translateX(0px) scaleX(-1) rotate(0deg); }
+  96% { transform: translateX(0px) scaleX(-1) rotate(180deg); }
+  100% { transform: translateX(0px) scaleX(1) rotate(360deg); }
 }
 
 .reading-student-character {
@@ -140,12 +206,17 @@
   box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4);
 }
 
-/* Learning Path Node Pulse */
-@keyframes nodePulse {
-  0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.6); }
-  70% { box-shadow: 0 0 0 12px rgba(6, 182, 212, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+/* Subtle Educational Background Ambient Visual Node */
+@keyframes ambientNodeFloat {
+  0%, 100% { transform: translateY(0px) scale(1); opacity: 0.15; }
+  50% { transform: translateY(-10px) scale(1.05); opacity: 0.25; }
 }
-.node-active {
-  animation: nodePulse 2s infinite;
+
+.ambient-decor-node {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-cyan) 0%, rgba(139, 92, 246, 0.2) 60%, transparent 80%);
+  animation: ambientNodeFloat 5s ease-in-out infinite;
+  z-index: var(--z-decor);
 }

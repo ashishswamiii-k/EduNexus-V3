@@ -1,66 +1,244 @@
 /* ============================================================
-   EDUNEXUS — PERSONALIZED LEARNING PATH VISUALIZER
+   EDUNEXUS — ADAPTIVE LEARNING PATH ENGINE & PREREQUISITE ROADMAP
    ============================================================ */
 
-class LearningPathVisualizer {
-  constructor() {}
+class LearningPathEngine {
+  constructor() {
+    this.containerId = 'page-body-container';
+    this.selectedSubjectId = 'SUB_DBMS';
+  }
 
-  renderPathContainer(containerEl, studentId) {
-    if (!containerEl) return;
+  setSubject(subjectId) {
+    this.selectedSubjectId = subjectId;
+    this.render();
+  }
 
-    const analysis = AIEngine.analyzeStudent(studentId);
-    const pathNodes = analysis.recommendedPath;
+  getStudentPathData(subjectId = this.selectedSubjectId, studentId = null) {
+    const activeUser = window.Auth ? Auth.getCurrentUser() : null;
+    const sId = studentId || (activeUser ? activeUser.id : 'DEMO0245');
 
-    let html = `
-      <div class="learning-path-wrapper">
-        <!-- Animated Student Character Reading Book -->
-        <div style="width: 100%; max-width: 480px; position: relative; height: 50px; margin-bottom: 0.5rem; overflow: hidden;">
-          <div class="reading-student-character" title="Student exploring learning path">
-            <div class="reading-student-avatar">📖</div>
-          </div>
-        </div>
-    `;
+    const subjects = Storage.getSubjects();
+    const currentSubject = subjects.find(s => s.id === subjectId) || subjects[0] || { id: 'SUB_DBMS', name: 'Database Management Systems', code: 'DBMS101' };
+    
+    // Subject specific topics
+    const subjectTopics = Storage.getTopicsBySubject(currentSubject.id);
+    const performance = Storage.getPerformance(sId);
 
-    pathNodes.forEach((node, idx) => {
-      let cardClass = 'path-node-card';
-      let badgeClass = 'badge-cyan';
+    // Build ordered roadmap for current subject
+    const topicRoadmap = subjectTopics.map((topic, index) => {
+      const perf = performance.find(p => p.topicId === topic.id);
+      let status = 'Upcoming';
+      let accuracy = perf ? perf.accuracy : null;
+      let attempts = perf ? perf.totalAttempts : 0;
 
-      if (node.status === 'Mastered') {
-        cardClass += ' mastered';
-        badgeClass = 'badge-low';
-      } else if (node.status === 'Needs Focus') {
-        cardClass += ' weak-gap';
-        badgeClass = 'badge-high';
-      } else if (node.status === 'Current') {
-        cardClass += ' current node-active';
-        badgeClass = 'badge-cyan';
+      if (perf) {
+        if (perf.status === 'Mastered' || perf.accuracy >= 75) {
+          status = 'Completed';
+        } else if (perf.status === 'Needs Focus' || perf.accuracy < 75) {
+          status = 'Weak Topic';
+        }
+      } else {
+        // If unattempted, first uncompleted item is Current Focus
+        if (index === 0) {
+          status = 'Current Focus';
+        } else {
+          const prevPerf = performance.find(p => p.topicId === subjectTopics[index - 1]?.id);
+          if (prevPerf && (prevPerf.status === 'Mastered' || prevPerf.accuracy >= 75)) {
+            status = 'Current Focus';
+          } else {
+            status = 'Upcoming';
+          }
+        }
       }
 
-      html += `
-        <div class="${cardClass}">
-          <div style="font-size: 1.75rem; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            ${node.icon}
-          </div>
-          <div style="flex: 1;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
-              <h4 style="font-size: 1rem; font-weight: 700;">${node.title}</h4>
-              <span class="badge ${badgeClass}">${node.status}</span>
-            </div>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">${node.description}</p>
-            ${node.action ? `<button class="btn btn-primary btn-sm" style="margin-top: 0.75rem;" onclick="Router.navigate('/quiz?topicId=${node.topicId}')">Start Recommended Activity</button>` : ''}
-          </div>
-        </div>
-      `;
-
-      if (idx < pathNodes.length - 1) {
-        html += `<div class="path-connector-line"></div>`;
-      }
+      return {
+        ...topic,
+        status,
+        accuracy,
+        attempts
+      };
     });
 
-    html += `</div>`;
-    containerEl.innerHTML = html;
+    const completedCount = topicRoadmap.filter(t => t.status === 'Completed').length;
+    const weakTopics = topicRoadmap.filter(t => t.status === 'Weak Topic');
+    const currentTopic = topicRoadmap.find(t => t.status === 'Current Focus' || t.status === 'Weak Topic') || topicRoadmap[0];
+    const totalCount = topicRoadmap.length || 1;
+    const completionPercent = Math.round((completedCount / totalCount) * 100);
+
+    // Dynamic AI Recommendation text based on actual quiz evaluation
+    let recommendation = '';
+    if (weakTopics.length > 0) {
+      recommendation = `⚠️ Diagnostic alert: Performance on ${weakTopics[0].name} is ${weakTopics[0].accuracy}% (Needs Revision). Review prerequisite concepts and attempt a revision quiz.`;
+    } else if (currentTopic) {
+      recommendation = `💡 You are currently focusing on ${currentTopic.name}. Complete the topic learning material to advance your roadmap.`;
+    } else {
+      recommendation = `🎉 Excellent progress! You have mastered all core topics in ${currentSubject.name}. Take a full subject quiz to test overall retention.`;
+    }
+
+    return {
+      studentId: sId,
+      subjects,
+      currentSubject,
+      topicRoadmap,
+      completionPercent,
+      completedCount,
+      totalCount,
+      weakTopics,
+      currentTopic,
+      recommendation
+    };
+  }
+
+  render(containerId = this.containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const data = this.getStudentPathData();
+
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem; max-width:980px;">
+        <!-- HEADER -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">
+              🌿 PERSONALIZED STUDY ROADMAP & LEARNING PATH
+            </h1>
+            <p style="font-size:0.875rem; color:var(--text-muted);">
+              Sequenced study roadmap derived from diagnostic accuracy, prerequisites, and subject goals.
+            </p>
+          </div>
+          <div style="text-align:right; background:var(--bg-tertiary); padding:0.6rem 1.2rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+            <div style="font-size:1.5rem; font-weight:800; color:var(--accent-cyan);">${data.completionPercent}%</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Roadmap Completion</div>
+          </div>
+        </div>
+
+        <!-- SUBJECT TABS SELECTOR -->
+        <div style="display:flex; gap:0.5rem; overflow-x:auto; padding-bottom:0.75rem; margin-bottom:1.5rem;">
+          ${data.subjects.map(s => `
+            <button class="btn ${s.id === data.currentSubject.id ? 'btn-primary' : 'btn-secondary'}" style="white-space:nowrap; padding:0.5rem 1rem;" onclick="LearningPath.setSubject('${s.id}')">
+              📘 ${s.name} (${s.code || ''})
+            </button>
+          `).join('')}
+        </div>
+
+        <!-- AI RECOMMENDATION BANNER -->
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem; border-left:4px solid ${data.weakTopics.length > 0 ? '#F59E0B' : 'var(--accent-cyan)'};">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+            <div style="flex:1;">
+              <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:${data.weakTopics.length > 0 ? '#FBBF24' : 'var(--accent-cyan)'}; margin-bottom:0.25rem;">
+                ✦ AI Personal Learning Recommendation
+              </div>
+              <p style="font-size:0.925rem; font-weight:600; color:var(--text-primary); margin:0;">
+                "${data.recommendation}"
+              </p>
+            </div>
+            ${data.currentTopic ? `
+              <button class="btn btn-primary btn-sm" onclick="Quiz.startQuiz('${data.currentTopic.id}'); Router.navigate('/quiz');">
+                🎯 Practice Topic Quiz
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- SUBJECT STUDY ROADMAP SEQUENCE -->
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem;">
+            <h3 style="font-size:1.1rem; font-weight:800; color:var(--text-primary); margin:0;">
+              📘 ${data.currentSubject.name} — Topic Sequence Roadmap
+            </h3>
+            <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">
+              ${data.completedCount} of ${data.totalCount} Topics Mastered
+            </span>
+          </div>
+
+          ${data.topicRoadmap.length > 0 ? `
+            <div style="display:flex; flex-direction:column; gap:0.85rem;">
+              ${data.topicRoadmap.map((t) => {
+                let statusBadge = '';
+                let statusBorder = 'border:1px solid var(--border-color); background:var(--bg-tertiary);';
+                let icon = '○';
+
+                if (t.status === 'Completed') {
+                  icon = '✓';
+                  statusBadge = `<span class="badge badge-low" style="background:rgba(16,185,129,0.15); color:#10B981; border:1px solid rgba(16,185,129,0.3);">✓ Completed (${t.accuracy}%)</span>`;
+                } else if (t.status === 'Weak Topic') {
+                  icon = '⚠️';
+                  statusBorder = 'border:1px solid rgba(245,158,11,0.5); background:rgba(245,158,11,0.08);';
+                  statusBadge = `<span class="badge" style="background:rgba(245,158,11,0.2); color:#FBBF24; border:1px solid rgba(245,158,11,0.4);">⚠️ Weak Topic (${t.accuracy}%)</span>`;
+                } else if (t.status === 'Current Focus') {
+                  icon = '→';
+                  statusBorder = 'border:1px solid var(--accent-cyan); background:rgba(6,182,212,0.08);';
+                  statusBadge = '<span class="badge badge-cyan">→ Current Focus</span>';
+                } else {
+                  statusBadge = '<span class="badge badge-secondary" style="opacity:0.7;">○ Upcoming</span>';
+                }
+
+                return `
+                  <div style="${statusBorder} border-radius:var(--radius-md); padding:1rem 1.15rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.85rem; transition:transform 0.2s ease;">
+                    <div style="display:flex; align-items:center; gap:0.85rem;">
+                      <div style="width:32px; height:32px; border-radius:50%; background:var(--bg-primary); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:var(--text-primary);">
+                        ${icon}
+                      </div>
+                      <div>
+                        <div style="font-size:0.95rem; font-weight:700; color:var(--text-primary);">${t.name}</div>
+                        <div style="font-size:0.775rem; color:var(--text-muted); margin-top:0.15rem;">
+                          ${t.unit || 'Unit 1'} • Difficulty: <strong>${t.difficulty || 'Medium'}</strong>
+                          ${t.prerequisiteId ? ` • Prerequisite: <span style="color:var(--accent-cyan);">${t.prerequisiteId}</span>` : ''}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                      ${statusBadge}
+                      <button class="btn btn-outline btn-sm" onclick="Quiz.startQuiz('${t.id}'); Router.navigate('/quiz');" title="Take Quiz for this topic">
+                        🎯 Test Topic
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : `
+            <div style="text-align:center; padding:2.5rem 1.5rem; background:var(--bg-tertiary); border-radius:var(--radius-md); border:1px dashed var(--border-color);">
+              <div style="font-size:2.5rem; margin-bottom:0.5rem;">📄</div>
+              <h4 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">Syllabus Not Provided</h4>
+              <p style="font-size:0.85rem; color:var(--text-muted); max-width:420px; margin:0 auto 1.25rem auto;">
+                Add your syllabus PDF or enter syllabus topics manually to generate your personalized learning path.
+              </p>
+              <button class="btn btn-primary" onclick="SubjectManager.showEditSubjectModal('${data.currentSubject.id}')">
+                + Add Syllabus & Topics
+              </button>
+            </div>
+          `}
+        </div>
+
+        <!-- RECOMMENDED STUDY MATERIALS FOR ACTIVE SUBJECT -->
+        <div class="card">
+          <h3 style="font-size:1rem; font-weight:800; color:var(--text-primary); margin-bottom:0.75rem;">
+            📚 Course Study Resources & Uploaded Syllabus
+          </h3>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+            <div style="background:var(--bg-tertiary); padding:0.85rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div style="font-size:0.85rem; font-weight:700;">📄 Subject Syllabus</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">${data.currentSubject.name} Curriculum</div>
+              </div>
+              <span class="badge badge-cyan">PDF</span>
+            </div>
+            <div style="background:var(--bg-tertiary); padding:0.85rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div style="font-size:0.85rem; font-weight:700;">📄 PYQ Repository</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">Previous Year Solved Papers</div>
+              </div>
+              <span class="badge badge-purple">PDF</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
   }
 }
 
-const LearningPath = new LearningPathVisualizer();
+const LearningPath = new LearningPathEngine();
 window.LearningPath = LearningPath;

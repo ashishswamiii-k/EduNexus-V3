@@ -1,569 +1,1778 @@
 /* ============================================================
-   EDUNEXUS — SINGLE PAGE APPLICATION (SPA) ROUTER & GUARD
+   EDUNEXUS — SINGLE-PAGE ROUTER & MULTI-ROLE NAVIGATION ENGINE
+   UNIVERSAL '←' BACK ARROW FOR SECONDARY PAGES • FIXED SIDEBAR
+   ROBUST ROLE-BASED ROUTE PROTECTION & SESSION CONTROL
    ============================================================ */
 
-class SPARouter {
+class RouterEngine {
   constructor() {
-    this.authMode = 'signin'; // 'signin' or 'signup'
-    this.currentRoleTab = 'student'; // 'student', 'teacher', 'admin'
-    this.showPassword = false;
+    this.selectedRole = 'student'; // Default active role selector on login card
 
     this.routes = {
-      '/login': { role: null, handler: () => this.renderAuthView('login') },
-      '/register': { role: null, handler: () => this.renderAuthView('register') },
+      '/': this.renderAuth.bind(this),
+      '/auth': this.renderAuth.bind(this),
+      '/login': this.renderAuth.bind(this),
+      '/student': this.renderStudentDashboard.bind(this),
+      '/teacher': this.renderTeacherDashboard.bind(this),
+      '/admin': this.renderAdminDashboard.bind(this),
+      '/subjects': this.renderSubjects.bind(this),
+      '/subject-details': this.renderSubjectDetails.bind(this),
+      '/topics': this.renderTopics.bind(this),
+      '/quiz': this.renderQuiz.bind(this),
+      '/learning-path': this.renderLearningPath.bind(this),
+      '/progress': this.renderProgress.bind(this),
+      '/achievements': this.renderAchievements.bind(this),
+      '/settings': this.renderSettings.bind(this),
+      '/terms': this.renderTerms.bind(this),
+      '/disclaimer': this.renderDisclaimer.bind(this),
+      '/about': this.renderAbout.bind(this),
+      '/licenses': this.renderLicenses.bind(this),
 
-      // Student Routes
-      '/student': { role: 'student', handler: (c) => StudentView.renderDashboard(c) },
-      '/subjects': { role: 'student', handler: (c, query) => StudentView.renderSubjects(c) },
-      '/topics': { role: 'student', handler: (c, query) => StudentView.renderTopics(c, query.subjectId) },
-      '/quiz': { role: 'student', handler: (c, query) => this.renderQuizView(c, query.topicId) },
-      '/learning-path': { role: 'student', handler: (c) => this.renderLearningPathView(c) },
-      '/progress': { role: 'student', handler: (c) => StudentView.renderProgress(c) },
-      '/achievements': { role: 'student', handler: (c) => StudentView.renderAchievements(c) },
+      // Teacher Sub-routes
+      '/teacher-students': this.renderTeacherStudents.bind(this),
+      '/teacher-classes': this.renderTeacherClasses.bind(this),
+      '/teacher-performance': this.renderTeacherPerformance.bind(this),
+      '/teacher-topics': this.renderTeacherTopics.bind(this),
+      '/teacher-interventions': this.renderTeacherInterventions.bind(this),
+      '/teacher-quizzes': this.renderTeacherQuizzes.bind(this),
+      '/teacher-reports': this.renderTeacherReports.bind(this),
 
-      // Teacher Routes
-      '/teacher': { role: 'teacher', handler: (c) => TeacherView.renderDashboard(c) },
-
-      // Admin Routes
-      '/admin': { role: 'admin', handler: (c) => AdminView.renderDashboard(c) },
-
-      // Shared Settings
-      '/settings': { role: 'all', handler: (c) => this.renderSettingsView(c) }
+      // Admin Sub-routes
+      '/admin-users': this.renderAdminUsers.bind(this),
+      '/admin-students': this.renderAdminStudents.bind(this),
+      '/admin-teachers': this.renderAdminTeachers.bind(this),
+      '/admin-classes': this.renderAdminClasses.bind(this),
+      '/admin-subjects': this.renderAdminSubjects.bind(this),
+      '/admin-analytics': this.renderAdminAnalytics.bind(this),
+      '/admin-reports': this.renderAdminReports.bind(this)
     };
 
-    window.addEventListener('hashchange', () => this.handleRouting());
+    this.currentRoute = '/';
   }
 
-  navigate(path) {
-    window.location.hash = `#${path}`;
+  init() {
+    window.addEventListener('popstate', () => {
+      this.handleRoute(window.location.hash.replace('#', '') || '/');
+    });
+
+    window.addEventListener('edunexus:profile-updated', (e) => {
+      const user = e.detail || (window.Auth ? Auth.getCurrentUser() : null);
+      if (user) {
+        this.updateProfileElements(user);
+      }
+    });
+
+    window.addEventListener('edunexus:subjects-updated', () => {
+      if (this.currentRoute === '/subjects') {
+        this.renderSubjects();
+      } else if (this.currentRoute === '/student' && window.StudentDashboard) {
+        StudentDashboard.render();
+      }
+    });
+
+    const initialRoute = window.location.hash.replace('#', '') || '/login';
+    this.navigate(initialRoute);
   }
 
   handleRouting() {
-    const hash = window.location.hash.slice(1) || '/login';
-    const [path, queryString] = hash.split('?');
-    const query = {};
+    const route = window.location.hash.replace('#', '') || '/login';
+    this.handleRoute(route);
+  }
 
-    if (queryString) {
-      queryString.split('&').forEach(pair => {
-        const [k, v] = pair.split('=');
-        query[k] = decodeURIComponent(v || '');
-      });
-    }
+  navigate(path) {
+    this.currentRoute = path;
+    window.location.hash = path;
+    this.handleRoute(path);
+  }
 
-    const route = this.routes[path] || this.routes['/login'];
+  handleRoute(path) {
     const user = Auth.getCurrentUser();
 
-    // 1. Auth Guard & Back-Button Protection
-    if (route.role && route.role !== 'all') {
-      if (!user) {
-        Notifications.toast('Session expired or logged out. Please sign in.', 'warning');
-        this.navigate('/login');
-        return;
+    // 1. Unauthenticated / Login Route Check
+    if (!user || path === '/' || path === '/auth' || path === '/login') {
+      if (!user && path !== '/' && path !== '/auth' && path !== '/login') {
+        window.location.hash = '/login';
+        this.currentRoute = '/login';
+      } else {
+        this.currentRoute = path;
       }
-      if (user.role.toLowerCase() !== route.role.toLowerCase()) {
-        Notifications.toast('Access denied. Redirecting to your dashboard.', 'error');
-        this.navigate(`/${user.role.toLowerCase()}`);
-        return;
+      const authWrapper = document.getElementById('auth-view-wrapper');
+      const appShell = document.getElementById('app-shell');
+      if (authWrapper) authWrapper.style.display = 'block';
+      if (appShell) appShell.style.display = 'none';
+      this.renderAuth();
+      return;
+    }
+
+    // 2. Role-Based Route Protection & Permissions Enforcer
+    const userRole = (user.role || 'student').toLowerCase();
+    const legalRoutes = ['/terms', '/disclaimer', '/about', '/licenses'];
+    
+    if (userRole === 'student') {
+      const studentAllowed = ['/student', '/subjects', '/subject-details', '/topics', '/quiz', '/learning-path', '/progress', '/achievements', '/settings', ...legalRoutes];
+      if (!studentAllowed.includes(path)) {
+        if (window.Notifications) Notifications.toast('Access denied. Redirected to Student Dashboard.', 'error');
+        window.location.hash = '/student';
+        path = '/student';
+      }
+    } else if (userRole === 'teacher') {
+      const teacherAllowed = ['/teacher', '/teacher-students', '/teacher-classes', '/teacher-performance', '/teacher-topics', '/teacher-interventions', '/teacher-quizzes', '/teacher-reports', '/settings', ...legalRoutes];
+      if (!teacherAllowed.includes(path)) {
+        if (window.Notifications) Notifications.toast('Access denied. Redirected to Teacher Dashboard.', 'error');
+        window.location.hash = '/teacher';
+        path = '/teacher';
+      }
+    } else if (userRole === 'admin') {
+      const adminAllowed = ['/admin', '/admin-users', '/admin-students', '/admin-teachers', '/admin-classes', '/admin-subjects', '/admin-analytics', '/admin-reports', '/settings', ...legalRoutes];
+      if (!adminAllowed.includes(path)) {
+        if (window.Notifications) Notifications.toast('Access denied. Redirected to Admin Dashboard.', 'error');
+        window.location.hash = '/admin';
+        path = '/admin';
       }
     }
 
-    // Dismiss any open header dropdown on route change
-    if (window.App) App.closeProfileDropdown();
+    this.currentRoute = path;
 
-    // 2. Hide / Show Shell Containers
     const authWrapper = document.getElementById('auth-view-wrapper');
     const appShell = document.getElementById('app-shell');
 
-    if (path === '/login' || path === '/register') {
-      if (user) {
-        this.navigate(`/${user.role.toLowerCase()}`);
-        return;
-      }
-      if (authWrapper) authWrapper.style.display = 'block';
-      if (appShell) appShell.style.display = 'none';
-      route.handler();
-    } else {
-      if (authWrapper) authWrapper.style.display = 'none';
-      if (appShell) appShell.style.display = 'flex';
+    if (authWrapper) authWrapper.style.display = 'none';
+    if (appShell) appShell.style.display = 'flex';
 
-      this.updateSidebarUI(user, path);
-      this.updateHeaderUI(user, path);
+    this.renderAppShell(user);
 
-      const mainContainer = document.getElementById('page-body-container');
-      if (mainContainer) {
-        mainContainer.innerHTML = '';
-        route.handler(mainContainer, query);
+    const handler = this.routes[path] || (
+      userRole === 'admin' ? this.routes['/admin'] :
+      userRole === 'teacher' ? this.routes['/teacher'] :
+      this.routes['/student']
+    );
+    handler();
+
+    window.scrollTo(0, 0);
+  }
+
+  updateActiveSidebarItem() {
+    const navItems = document.querySelectorAll('#sidebar-nav-items .nav-item');
+    navItems.forEach(item => {
+      const onclickAttr = item.getAttribute('onclick') || '';
+      if (onclickAttr.includes(`'${this.currentRoute}'`)) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
       }
+    });
+  }
+
+  updateProfileElements(user) {
+    const avatar = document.getElementById('sidebar-user-avatar');
+    const userName = document.getElementById('sidebar-user-name');
+    const userRole = document.getElementById('sidebar-user-role');
+
+    const roleName = user.role ? (user.role.toLowerCase() === 'admin' ? 'ADMINISTRATOR' : user.role.toUpperCase()) : 'STUDENT';
+
+    if (avatar && user.name) avatar.textContent = user.name.charAt(0).toUpperCase();
+    if (userName) userName.textContent = user.name || 'User';
+    if (userRole) userRole.textContent = roleName;
+
+    if (this.currentRoute === '/student' && window.StudentDashboard) {
+      StudentDashboard.render();
     }
   }
 
-  updateSidebarUI(user, activePath) {
-    if (!user) return;
+  renderAppShell(user) {
+    const navItems = document.getElementById('sidebar-nav-items');
+    const role = (user.role || 'student').toLowerCase();
+    const currentSidebarRole = navItems ? navItems.getAttribute('data-active-role') : null;
 
-    const navEl = document.getElementById('sidebar-nav-items');
-    if (!navEl) return;
+    if (navItems && (navItems.children.length === 0 || currentSidebarRole !== role)) {
+      navItems.setAttribute('data-active-role', role);
 
-    let items = [];
-    if (user.role === 'student') {
-      items = [
-        { path: '/student', label: 'Dashboard', icon: '🏠' },
-        { path: '/subjects', label: 'My Subjects', icon: '📚' },
-        { path: '/learning-path', label: 'Learning Path', icon: '🛣️' },
-        { path: '/progress', label: 'Academic Progress', icon: '📊' },
-        { path: '/achievements', label: 'Achievements', icon: '🏆' },
-        { path: '/settings', label: 'Settings', icon: '⚙️' }
-      ];
-    } else if (user.role === 'teacher') {
-      items = [
-        { path: '/teacher', label: 'Teacher Dashboard', icon: '🏠' },
-        { path: '/settings', label: 'Settings', icon: '⚙️' }
-      ];
-    } else if (user.role === 'admin') {
-      items = [
-        { path: '/admin', label: 'Admin Dashboard', icon: '⚡' },
-        { path: '/settings', label: 'Settings', icon: '⚙️' }
-      ];
+      if (role === 'teacher') {
+        navItems.innerHTML = `
+          <a class="nav-item ${this.currentRoute === '/teacher' ? 'active' : ''}" onclick="Router.navigate('/teacher')" title="Dashboard">
+            <span class="nav-icon"><i class="ri-dashboard-line"></i></span>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/teacher-students' ? 'active' : ''}" onclick="Router.navigate('/teacher-students')" title="Students">
+            <span class="nav-icon"><i class="ri-user-line"></i></span>
+            <span class="nav-text">Students</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/teacher-classes' ? 'active' : ''}" onclick="Router.navigate('/teacher-classes')" title="Classes / Subjects">
+            <span class="nav-icon"><i class="ri-book-3-line"></i></span>
+            <span class="nav-text">Classes / Subjects</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/teacher-performance' ? 'active' : ''}" onclick="Router.navigate('/teacher-performance')" title="Student Performance">
+            <span class="nav-icon"><i class="ri-bar-chart-line"></i></span>
+            <span class="nav-text">Student Performance</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/teacher-topics' ? 'active' : ''}" onclick="Router.navigate('/teacher-topics')" title="Weak Topics">
+            <span class="nav-icon"><i class="ri-alert-line"></i></span>
+            <span class="nav-text">Weak Topics</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/teacher-interventions' ? 'active' : ''}" onclick="Router.navigate('/teacher-interventions')" title="Interventions">
+            <span class="nav-icon"><i class="ri-lightbulb-line"></i></span>
+            <span class="nav-text">Interventions</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/teacher-quizzes' ? 'active' : ''}" onclick="Router.navigate('/teacher-quizzes')" title="Quiz Management">
+            <span class="nav-icon"><i class="ri-questionnaire-line"></i></span>
+            <span class="nav-text">Quiz Management</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/teacher-reports' ? 'active' : ''}" onclick="Router.navigate('/teacher-reports')" title="Reports">
+            <span class="nav-icon"><i class="ri-file-chart-line"></i></span>
+            <span class="nav-text">Reports</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/settings' ? 'active' : ''}" onclick="Router.navigate('/settings')" title="Settings">
+            <span class="nav-icon"><i class="ri-settings-4-line"></i></span>
+            <span class="nav-text">Settings</span>
+          </a>
+        `;
+      } else if (role === 'admin') {
+        navItems.innerHTML = `
+          <a class="nav-item ${this.currentRoute === '/admin' ? 'active' : ''}" onclick="Router.navigate('/admin')" title="Dashboard">
+            <span class="nav-icon"><i class="ri-shield-user-line"></i></span>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/admin-users' ? 'active' : ''}" onclick="Router.navigate('/admin-users')" title="Users">
+            <span class="nav-icon"><i class="ri-group-line"></i></span>
+            <span class="nav-text">Users</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/admin-students' ? 'active' : ''}" onclick="Router.navigate('/admin-students')" title="Students">
+            <span class="nav-icon"><i class="ri-user-follow-line"></i></span>
+            <span class="nav-text">Students</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/admin-teachers' ? 'active' : ''}" onclick="Router.navigate('/admin-teachers')" title="Teachers">
+            <span class="nav-icon"><i class="ri-user-star-line"></i></span>
+            <span class="nav-text">Teachers</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/admin-classes' ? 'active' : ''}" onclick="Router.navigate('/admin-classes')" title="Institutions / Classes">
+            <span class="nav-icon"><i class="ri-building-4-line"></i></span>
+            <span class="nav-text">Institutions / Classes</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/admin-subjects' ? 'active' : ''}" onclick="Router.navigate('/admin-subjects')" title="Subjects">
+            <span class="nav-icon"><i class="ri-book-read-line"></i></span>
+            <span class="nav-text">Subjects</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/admin-analytics' ? 'active' : ''}" onclick="Router.navigate('/admin-analytics')" title="System Analytics">
+            <span class="nav-icon"><i class="ri-pulse-line"></i></span>
+            <span class="nav-text">System Analytics</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/admin-reports' ? 'active' : ''}" onclick="Router.navigate('/admin-reports')" title="Reports">
+            <span class="nav-icon"><i class="ri-file-text-line"></i></span>
+            <span class="nav-text">Reports</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/settings' ? 'active' : ''}" onclick="Router.navigate('/settings')" title="Settings">
+            <span class="nav-icon"><i class="ri-settings-4-line"></i></span>
+            <span class="nav-text">Settings</span>
+          </a>
+        `;
+      } else {
+        // Student Sidebar
+        navItems.innerHTML = `
+          <a class="nav-item ${this.currentRoute === '/student' ? 'active' : ''}" onclick="Router.navigate('/student')" title="Dashboard">
+            <span class="nav-icon"><i class="ri-dashboard-line"></i></span>
+            <span class="nav-text">Dashboard</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/subjects' ? 'active' : ''}" onclick="Router.navigate('/subjects')" title="My Subjects">
+            <span class="nav-icon"><i class="ri-book-3-line"></i></span>
+            <span class="nav-text">My Subjects</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/learning-path' ? 'active' : ''}" onclick="Router.navigate('/learning-path')" title="Learning Path">
+            <span class="nav-icon"><i class="ri-node-tree"></i></span>
+            <span class="nav-text">Learning Path</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/quiz' ? 'active' : ''}" onclick="Router.navigate('/quiz')" title="Quizzes">
+            <span class="nav-icon"><i class="ri-questionnaire-line"></i></span>
+            <span class="nav-text">Quizzes</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/progress' ? 'active' : ''}" onclick="Router.navigate('/progress')" title="Academic Progress">
+            <span class="nav-icon"><i class="ri-bar-chart-line"></i></span>
+            <span class="nav-text">Academic Progress</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/achievements' ? 'active' : ''}" onclick="Router.navigate('/achievements')" title="Achievements">
+            <span class="nav-icon"><i class="ri-medal-line"></i></span>
+            <span class="nav-text">Achievements</span>
+          </a>
+          <a class="nav-item ${this.currentRoute === '/settings' ? 'active' : ''}" onclick="Router.navigate('/settings')" title="Settings">
+            <span class="nav-icon"><i class="ri-settings-4-line"></i></span>
+            <span class="nav-text">Settings</span>
+          </a>
+        `;
+      }
+    } else {
+      this.updateActiveSidebarItem();
     }
 
-    let navHtml = '';
-    items.forEach(item => {
-      const isActive = activePath === item.path;
-      navHtml += `
-        <a class="nav-item ${isActive ? 'active' : ''}" onclick="Router.navigate('${item.path}')">
-          <span class="nav-icon">${item.icon}</span>
-          <span class="nav-text">${item.label}</span>
-        </a>
-      `;
+    // Update Sidebar User Footer
+    this.updateProfileElements(user);
+
+    // Inject Universal '←' Back Button ONLY for Secondary Pages (Not Main Dashboards)
+    const isMainDashboard = (this.currentRoute === '/student' || this.currentRoute === '/teacher' || this.currentRoute === '/admin');
+    const pageBody = document.getElementById('page-body-container');
+    if (pageBody && !isMainDashboard) {
+      const existingBtn = document.getElementById('universal-back-btn');
+      if (!existingBtn) {
+        pageBody.insertAdjacentHTML('afterbegin', `
+          <button id="universal-back-btn" class="back-nav-btn" onclick="window.history.back()" title="Back" data-tooltip="Back">
+            ←
+          </button>
+        `);
+      }
+    } else {
+      const existingBtn = document.getElementById('universal-back-btn');
+      if (existingBtn) existingBtn.remove();
+    }
+  }
+
+  setRole(role) {
+    this.selectedRole = (role || 'student').toLowerCase();
+
+    // Update tab active state
+    const tabs = document.querySelectorAll('.role-tab-btn');
+    tabs.forEach(t => {
+      if (t.dataset.role === this.selectedRole) {
+        t.classList.add('active');
+      } else {
+        t.classList.remove('active');
+      }
     });
 
-    navEl.innerHTML = navHtml;
+    // Animate switch
+    const formCard = document.getElementById('auth-form-content');
+    if (formCard) {
+      formCard.classList.remove('form-animate-role');
+      void formCard.offsetWidth; // trigger reflow
+      formCard.classList.add('form-animate-role');
+    }
 
-    const userNameEl = document.getElementById('sidebar-user-name');
-    const userRoleEl = document.getElementById('sidebar-user-role');
-    const userAvatarEl = document.getElementById('sidebar-user-avatar');
+    const idLabel = document.getElementById('auth-id-label');
+    const idInput = document.getElementById('auth-userid');
+    const pwdInput = document.getElementById('auth-password');
+    const submitBtn = document.getElementById('auth-submit-btn');
+    const roleFooter = document.getElementById('auth-role-footer');
 
-    if (userNameEl) userNameEl.textContent = user.name;
-    if (userRoleEl) userRoleEl.textContent = user.role.toUpperCase();
-    if (userAvatarEl) userAvatarEl.textContent = user.name.charAt(0).toUpperCase();
-  }
+    if (idInput) idInput.value = '';
+    if (pwdInput) pwdInput.value = '';
 
-  updateHeaderUI(user, path) {
-    const welcomeEl = document.getElementById('header-welcome-text');
-    if (welcomeEl && user) {
-      const name = user.name.split(' ')[0];
-      welcomeEl.innerHTML = `Good morning, <strong>${name}</strong> <span class="wave-hand">👋</span>`;
+    if (this.selectedRole === 'teacher') {
+      if (idLabel) idLabel.textContent = 'Teacher ID';
+      if (idInput) idInput.placeholder = 'Enter Teacher ID';
+      if (submitBtn) submitBtn.innerHTML = 'Login as Teacher &rarr;';
+      if (roleFooter) roleFooter.innerHTML = '<span style="color:var(--text-muted); font-size:0.825rem;">New Teacher? Contact your institution administrator.</span>';
+    } else if (this.selectedRole === 'admin') {
+      if (idLabel) idLabel.textContent = 'Admin ID';
+      if (idInput) idInput.placeholder = 'Enter Admin ID';
+      if (submitBtn) submitBtn.innerHTML = 'Login as Admin &rarr;';
+      if (roleFooter) roleFooter.innerHTML = '<span style="color:var(--text-muted); font-size:0.825rem;">Admin accounts are managed by institution system setup.</span>';
+    } else {
+      // Student
+      if (idLabel) idLabel.textContent = 'Student ID / Roll No';
+      if (idInput) idInput.placeholder = 'Enter Student ID / Roll No';
+      if (submitBtn) submitBtn.innerHTML = 'Login as Student &rarr;';
+      if (roleFooter) roleFooter.innerHTML = '<a onclick="Router.openStudentRegisterModal()" style="color:var(--accent-cyan); font-weight:600; cursor:pointer; text-decoration:underline; font-size:0.85rem;">New Student? Register</a>';
     }
   }
 
-  renderAuthView(animateType = 'entrance') {
-    const container = document.getElementById('auth-view-wrapper');
-    if (!container) return;
+  renderAuth() {
+    const authWrapper = document.getElementById('auth-view-wrapper');
+    if (!authWrapper) return;
 
-    let animClass = 'form-animate-entrance';
-    if (animateType === 'tab') animClass = 'form-animate-tab';
-    if (animateType === 'role') animClass = 'form-animate-role';
+    const role = this.selectedRole || 'student';
 
-    container.innerHTML = `
-      <div class="auth-split-wrapper">
-        <!-- LEFT PANEL: PROTECTED SAAS FORM (44%) -->
+    authWrapper.innerHTML = `
+      <div class="auth-split-wrapper fade-in">
+        <!-- LEFT PANEL: SAAS FORM & ROLE SELECTOR -->
         <div class="auth-left-panel">
-          <div class="auth-left-content ${animClass}">
-            <!-- Brand Logo -->
+          <div class="auth-left-content">
+            <!-- BRAND LOGO -->
             <div class="auth-header-logo">
-              <img src="assets/logo.png" alt="EduNexus — Personalized Learning Platform" class="edunexus-logo-img auth-logo-img">
+              <img src="assets/logo.png" alt="EduNexus — AI Learning Platform" />
             </div>
 
-            <!-- Welcome Message -->
-            <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 0.25rem;">
-              ${this.authMode === 'signin' ? 'Welcome Back 👋' : 'Create Account 🚀'}
-            </h2>
-            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
-              ${this.authMode === 'signin' ? 'AI-Powered Personalized Learning Platform.' : 'Start your adaptive learning journey today.'}
-            </p>
-
-            <!-- Segmented Control: Sign In / Create Account -->
-            <div class="segmented-control">
-              <button class="segmented-tab ${this.authMode === 'signin' ? 'active' : ''}" onclick="Router.setAuthMode('signin')">Sign In</button>
-              <button class="segmented-tab ${this.authMode === 'signup' ? 'active' : ''}" onclick="Router.setAuthMode('signup')">Create Account</button>
-            </div>
-
-            <!-- Role Selector -->
+            <!-- CARD HEADER -->
             <div style="margin-bottom: 1.25rem;">
-              <span class="text-xs text-secondary font-bold" style="display: block; margin-bottom: 0.35rem;">CONTINUE AS</span>
+              <h2 style="font-size:1.45rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem; letter-spacing:-0.02em;">
+                WELCOME TO EDUNEXUS
+              </h2>
+              <p style="font-size:0.85rem; color:var(--text-muted);">
+                AI-Powered Personalized Learning & Early Intervention System
+              </p>
+            </div>
+
+            <!-- 1. ROLE SELECTOR SEGMENTED TABS -->
+            <div style="margin-bottom: 1.25rem;">
+              <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.4rem; letter-spacing:0.5px;">
+                Select Account Role
+              </div>
               <div class="role-tabs">
-                <button class="role-tab ${this.currentRoleTab === 'student' ? 'active' : ''}" onclick="Router.setRoleTab('student')">Student</button>
-                <button class="role-tab ${this.currentRoleTab === 'teacher' ? 'active' : ''}" onclick="Router.setRoleTab('teacher')">Teacher</button>
-                <button class="role-tab ${this.currentRoleTab === 'admin' ? 'active' : ''}" onclick="Router.setRoleTab('admin')">Admin</button>
+                <button type="button" class="role-tab role-tab-btn ${role === 'student' ? 'active' : ''}" data-role="student" onclick="Router.setRole('student')">
+                  🎓 Student
+                </button>
+                <button type="button" class="role-tab role-tab-btn ${role === 'teacher' ? 'active' : ''}" data-role="teacher" onclick="Router.setRole('teacher')">
+                  👨‍🏫 Teacher
+                </button>
+                <button type="button" class="role-tab role-tab-btn ${role === 'admin' ? 'active' : ''}" data-role="admin" onclick="Router.setRole('admin')">
+                  🛡️ Admin
+                </button>
               </div>
             </div>
 
-            <!-- SIGN IN FORM -->
-            ${this.authMode === 'signin' ? `
-              <form id="login-form" onsubmit="event.preventDefault(); Router.handleLoginSubmit();">
-                <div class="form-group">
-                  <label class="form-label">${this.currentRoleTab.toUpperCase()} ID</label>
-                  <input type="text" id="login-user-id" class="form-control" placeholder="e.g. ECB0245 or ADMIN001" required value="${this.getDefaultUserId()}">
+            <!-- DYNAMIC ROLE FORM CARD -->
+            <div id="auth-form-content" class="form-animate-role">
+              <form onsubmit="event.preventDefault(); Router.handleLoginSubmit();" novalidate>
+                <div class="form-group" style="text-align:left; margin-bottom:1rem;">
+                  <label id="auth-id-label" class="form-label">
+                    ${role === 'teacher' ? 'Teacher ID' : role === 'admin' ? 'Admin ID' : 'Student ID / Roll No'}
+                  </label>
+                  <input type="text" id="auth-userid" class="form-control" value="" 
+                    placeholder="${role === 'teacher' ? 'Enter Teacher ID' : role === 'admin' ? 'Enter Admin ID' : 'Enter Student ID / Roll No'}" />
                 </div>
 
-                <div class="form-group">
+                <div class="form-group" style="text-align:left; margin-bottom:1.25rem;">
                   <label class="form-label">Password</label>
                   <div class="password-input-wrapper">
-                    <input type="${this.showPassword ? 'text' : 'password'}" id="login-password" class="form-control" placeholder="Enter password" required value="${this.getDefaultPassword()}">
-                    <button type="button" class="password-toggle-btn" onclick="Router.togglePasswordVisibility()">
-                      ${this.showPassword ? '👁️‍🗨️' : '👁️'}
+                    <input type="password" id="auth-password" class="form-control" value="" placeholder="Enter Password" />
+                    <button type="button" class="password-toggle-btn" onclick="const input=document.getElementById('auth-password'); input.type = input.type === 'password' ? 'text' : 'password';">
+                      👁️
                     </button>
                   </div>
                 </div>
 
-                <div class="flex justify-between items-center text-xs" style="margin-bottom: 1.25rem;">
-                  <label class="flex items-center gap-1 cursor-pointer">
-                    <input type="checkbox" checked> Remember me
-                  </label>
-                  <a class="auth-link" onclick="Notifications.toast('Please contact your institution administrator to reset your password.', 'warning', 4500)">Forgot Password?</a>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-full btn-lg">
-                  Sign In <span style="transition: transform 0.2s;" class="btn-arrow">&rarr;</span>
+                <button id="auth-submit-btn" type="submit" class="btn btn-primary btn-lg w-full">
+                  ${role === 'teacher' ? 'Login as Teacher &rarr;' : role === 'admin' ? 'Login as Admin &rarr;' : 'Login as Student &rarr;'}
                 </button>
               </form>
-            ` : `
-              <!-- CREATE ACCOUNT FORM -->
-              <form id="register-form" onsubmit="event.preventDefault(); Router.handleRegisterSubmit();">
-                <div class="form-group">
-                  <label class="form-label">Full Name</label>
-                  <input type="text" id="reg-name" class="form-control" placeholder="e.g. Ashish Swami" required>
-                </div>
 
-                <div class="grid grid-2 gap-2">
-                  <div class="form-group">
-                    <label class="form-label">Institution Code</label>
-                    <input type="text" id="reg-school" class="form-control" value="ECB" required onkeyup="Router.updateGeneratedId()">
-                  </div>
-                  ${this.currentRoleTab === 'teacher' ? `
-                    <div class="form-group">
-                      <label class="form-label">Mobile Number</label>
-                      <input type="text" id="reg-mobile" class="form-control" placeholder="98761234" required onkeyup="Router.updateGeneratedId()">
-                    </div>
-                  ` : `
-                    <div class="form-group">
-                      <label class="form-label">Student ID / Roll</label>
-                      <input type="text" id="reg-roll" class="form-control" placeholder="0245" value="0248" required onkeyup="Router.updateGeneratedId()">
-                    </div>
-                  `}
-                </div>
-
-                <div style="padding: 0.5rem 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.8rem; color: var(--accent-cyan);">
-                  Generated ${this.currentRoleTab.toUpperCase()} ID: <strong id="generated-id-preview">ECB0248</strong>
-                </div>
-
-                <div class="grid grid-2 gap-2">
-                  <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" id="reg-pass" class="form-control" required value="student123">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Confirm Password</label>
-                    <input type="password" id="reg-confirm" class="form-control" required value="student123">
-                  </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-full btn-lg" style="margin-top: 0.5rem;">CREATE ACCOUNT</button>
-              </form>
-            `}
+              <!-- ROLE SPECIFIC REGISTRATION / FOOTER INFO -->
+              <div id="auth-role-footer" style="text-align:center; margin-top:1.25rem;">
+                ${role === 'teacher' ? `
+                  <span style="color:var(--text-muted); font-size:0.825rem;">New Teacher? Contact your institution administrator.</span>
+                ` : role === 'admin' ? `
+                  <span style="color:var(--text-muted); font-size:0.825rem;">Admin accounts are managed by institution system setup.</span>
+                ` : `
+                  <a onclick="Router.openStudentRegisterModal()" style="color:var(--accent-cyan); font-weight:600; cursor:pointer; text-decoration:underline; font-size:0.85rem;">New Student? Register</a>
+                `}
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- RIGHT PANEL: CLEAN UN-OBSCURED CANVAS (56%) -->
+        <!-- RIGHT PANEL: UN-OBSCURED VISUAL CANVAS -->
         <div class="auth-right-panel">
-          <!-- ZONE 1: BACKGROUND DECORATIONS (z-index: 0) -->
           <div class="background-decoration-zone">
             <div class="right-panel-blob right-panel-blob-1"></div>
             <div class="right-panel-blob right-panel-blob-2"></div>
           </div>
 
-          <!-- ZONE 2: BACKGROUND TEXT ZONE (z-index: 1) — STATIC FAINT TYPOGRAPHY -->
           <div class="background-text-zone">
-            <span class="bg-text-item bg-text-top-left">LEARN</span>
-            <span class="bg-text-item bg-text-top-right">ADAPT</span>
-            <span class="bg-text-item bg-text-bottom-right">GROW</span>
+            <div class="bg-text-item bg-text-top-left">EDUNEXUS</div>
+            <div class="bg-text-item bg-text-top-right">AI LEARNING</div>
+            <div class="bg-text-item bg-text-bottom-right">V3.0</div>
           </div>
 
-          <!-- ZONE 3: HERO INTERACTION ZONE & CENTER HERO GRAPHIC (z-index: 2) -->
           <div class="hero-interaction-zone">
-            <!-- UN-OBSCURED CENTERED HERO GRAPHIC (z-index: 2) -->
             <div class="center-hero-zone">
-              <div style="font-size: 5rem; filter: drop-shadow(0 0 24px rgba(6,182,212,0.4)); margin-bottom: 0.5rem;">
-                💻 🎓 🧠
-              </div>
-              <h3 style="font-size: 1.5rem; font-weight: 800; color: #F8FAFC; margin-bottom: 0.35rem;">
-                Learning That Adapts To You.
-              </h3>
-              <p class="text-xs text-secondary" style="max-width: 280px; margin: 0 auto; line-height: 1.5;">
-                Prerequisite gap detection & early intervention platform for personalized learning.
-              </p>
+              <div style="font-size: 4rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 20px rgba(6, 182, 212, 0.5));">🎓</div>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: #FFFFFF; margin-bottom: 0.35rem;">Adaptive Intelligence</h3>
+              <p style="font-size: 0.85rem; color: var(--text-secondary);">Early Intervention & Personalized Academic Guidance for Engineering Students</p>
             </div>
           </div>
 
-          <!-- ZONE 4: BOTTOM-CENTER FIXED ACTIVE LEARNER STUDY CHARACTER CARD (z-index: 3) -->
           <div class="study-character-zone">
-            <div class="study-ai-popup">✦ Concept Mastered</div>
-            <div class="study-avatar-container">
-              👨‍🎓
-            </div>
+            <div class="study-avatar-container">👨‍💻</div>
             <div class="study-info-box">
-              <span style="font-size: 0.875rem; font-weight: 700; color: #F8FAFC;">Active Student</span>
-              <span style="font-size: 0.75rem; color: var(--text-secondary);">📖 Reading DBMS 2NF Rules</span>
-              <span style="font-size: 0.725rem; color: var(--accent-cyan); font-weight: 600;">💻 Real-time AI Sync Active</span>
+              <span style="font-size:0.85rem; font-weight:700; color:#FFFFFF;">B.Tech Learner</span>
+              <span style="font-size:0.725rem; color:var(--accent-cyan);">Computer Science</span>
             </div>
+            <div class="study-ai-popup">✦ AI Active</div>
           </div>
         </div>
       </div>
     `;
-
-    if (window.Animations) {
-      Animations.initMagneticElements();
-    }
-  }
-
-  setAuthMode(mode) {
-    this.authMode = mode;
-    this.renderAuthView('tab');
-  }
-
-  setRoleTab(role) {
-    this.currentRoleTab = role;
-    this.renderAuthView('role');
-  }
-
-  togglePasswordVisibility() {
-    this.showPassword = !this.showPassword;
-    const input = document.getElementById('login-password');
-    if (input) {
-      input.type = this.showPassword ? 'text' : 'password';
-    }
-  }
-
-  getDefaultUserId() {
-    if (this.currentRoleTab === 'student') return 'ECB0245';
-    if (this.currentRoleTab === 'teacher') return 'ECB1234';
-    if (this.currentRoleTab === 'admin') return 'ADMIN001';
-    return '';
-  }
-
-  getDefaultPassword() {
-    if (this.currentRoleTab === 'student') return 'student123';
-    if (this.currentRoleTab === 'teacher') return 'teacher123';
-    if (this.currentRoleTab === 'admin') return 'admin123';
-    return '';
-  }
-
-  updateGeneratedId() {
-    const school = document.getElementById('reg-school')?.value || 'ECB';
-    const preview = document.getElementById('generated-id-preview');
-    if (!preview) return;
-
-    if (this.currentRoleTab === 'teacher') {
-      const mobile = document.getElementById('reg-mobile')?.value || '1234';
-      const last4 = mobile.slice(-4);
-      preview.textContent = `${school.toUpperCase()}${last4}`;
-    } else {
-      const roll = document.getElementById('reg-roll')?.value || '0245';
-      preview.textContent = `${school.toUpperCase()}${roll.padStart(4, '0')}`;
-    }
   }
 
   handleLoginSubmit() {
-    const userId = document.getElementById('login-user-id').value;
-    const password = document.getElementById('login-password').value;
+    const userId = document.getElementById('auth-userid')?.value;
+    const pwd = document.getElementById('auth-password')?.value;
+    const role = this.selectedRole || 'student';
 
-    const res = Auth.login(this.currentRoleTab, userId, password);
+    const res = Auth.login(role, userId, pwd);
     if (res.success) {
-      Notifications.toast(`Welcome back, ${res.user.name}!`, 'success');
-      this.navigate(`/${res.user.role.toLowerCase()}`);
+      if (window.Notifications) Notifications.toast(`Welcome back, ${res.user.name}!`, 'success');
+      const targetRoute = res.user.role === 'admin' ? '/admin' : res.user.role === 'teacher' ? '/teacher' : '/student';
+      this.navigate(targetRoute);
+    } else {
+      if (window.Notifications) Notifications.toast(res.message, 'error');
+    }
+  }
+
+  openStudentRegisterModal() {
+    const body = `
+      <form id="student-reg-form" onsubmit="event.preventDefault(); Router.submitStudentRegister();">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="reg-fullname" class="form-control" placeholder="e.g. Vikram Sharma" required>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+          <div class="form-group">
+            <label class="form-label">School / Institution Code</label>
+            <input type="text" id="reg-school" class="form-control" value="ECB" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Roll Number</label>
+            <input type="text" id="reg-roll" class="form-control" value="0248" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Class Section</label>
+          <input type="text" id="reg-class" class="form-control" value="Sec-A">
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="reg-pass" class="form-control" value="student123" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" id="reg-confirmpass" class="form-control" value="student123" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" style="margin-top:0.5rem;">Register Student Account</button>
+      </form>
+    `;
+    Notifications.openModal('New Student Registration', body, null);
+  }
+
+  submitStudentRegister() {
+    const fullName = document.getElementById('reg-fullname')?.value;
+    const schoolCode = document.getElementById('reg-school')?.value;
+    const rollNumber = document.getElementById('reg-roll')?.value;
+    const classId = document.getElementById('reg-class')?.value;
+    const password = document.getElementById('reg-pass')?.value;
+    const confirmPassword = document.getElementById('reg-confirmpass')?.value;
+
+    const res = Auth.registerStudent({ fullName, schoolCode, rollNumber, classId, password, confirmPassword });
+    if (res.success) {
+      Notifications.closeModal();
+      Notifications.toast(`Student Account created! Student ID: ${res.id}`, 'success');
+      this.setRole('student');
+      const idInput = document.getElementById('auth-userid');
+      const pwdInput = document.getElementById('auth-password');
+      if (idInput) idInput.value = res.id;
+      if (pwdInput) pwdInput.value = password;
     } else {
       Notifications.toast(res.message, 'error');
     }
   }
 
-  handleRegisterSubmit() {
-    const name = document.getElementById('reg-name').value;
-    const school = document.getElementById('reg-school').value;
-    const pass = document.getElementById('reg-pass').value;
-    const confirm = document.getElementById('reg-confirm').value;
-
-    let res;
-    if (this.currentRoleTab === 'teacher') {
-      const mobile = document.getElementById('reg-mobile').value;
-      const subject = 'Database Management Systems';
-      res = Auth.registerTeacher({ fullName: name, schoolCode: school, mobileNumber: mobile, subject, password: pass, confirmPassword: confirm });
-    } else {
-      const roll = document.getElementById('reg-roll').value;
-      const classId = 'Sec-A';
-      res = Auth.registerStudent({ fullName: name, schoolCode: school, rollNumber: roll, classId, password: pass, confirmPassword: confirm });
-    }
-
-    if (res.success) {
-      Notifications.toast(`Account ${res.id} created! Please sign in.`, 'success');
-      this.setAuthMode('signin');
-    } else {
-      Notifications.toast(res.message, 'error');
-    }
+  renderStudentDashboard() {
+    StudentDashboard.render();
   }
 
-  renderQuizView(container, topicId = 'TOP_DBMS_NORM') {
-    const started = Quiz.startQuiz(topicId);
-    if (!started) return;
-
-    this.renderQuizStep(container);
+  renderTeacherDashboard() {
+    const container = document.getElementById('page-body-container');
+    if (container && window.TeacherView) TeacherView.renderDashboard(container);
   }
 
-  renderQuizStep(container) {
-    const qData = Quiz.currentQuiz;
-    const qObj = qData.questions[Quiz.currentIndex];
-    const totalQ = qData.questions.length;
-    const currentQNum = Quiz.currentIndex + 1;
-    const selected = Quiz.userAnswers[Quiz.currentIndex];
-
-    let optionsHtml = '';
-    qObj.options.forEach((opt, idx) => {
-      const isSelected = selected === idx;
-      optionsHtml += `
-        <button class="quiz-option-btn ${isSelected ? 'selected' : ''}" onclick="Quiz.selectAnswer(${idx}); Router.renderQuizStep(document.getElementById('page-body-container'));">
-          <span class="quiz-option-letter">${String.fromCharCode(65 + idx)}</span>
-          <span>${opt}</span>
-        </button>
-      `;
-    });
-
-    const html = `
-      <div class="quiz-container quiz-slide-in">
-        <div class="quiz-header">
+  renderTeacherStudents() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const users = Storage.getUsers().filter(u => u.role === 'student');
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
           <div>
-            <span class="badge badge-cyan">Diagnostic Evaluation</span>
-            <h3 style="font-weight: 700; font-size: 1.2rem; margin-top: 0.2rem;">${qData.topicName}</h3>
-            <span class="text-xs text-secondary">Question ${currentQNum} of ${totalQ}</span>
+            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">ENROLLED STUDENTS ROSTER (${users.length})</h1>
+            <p style="font-size:0.875rem; color:var(--text-muted);">Computer Science & Engineering Department</p>
           </div>
-          <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-tertiary); padding: 0.4rem 0.85rem; border-radius: var(--radius-full); font-weight: 700;">
-            ⏱ <span id="quiz-timer-display">00:00</span>
-          </div>
-        </div>
-
-        <div class="progress-bar-container" style="margin-bottom: 1.5rem;">
-          <div class="progress-bar-fill" style="width: ${(currentQNum / totalQ) * 100}%;"></div>
-        </div>
-
-        <div class="card quiz-question-card">
-          <h4 class="quiz-question-text">${qObj.question}</h4>
-          <div class="quiz-options">
-            ${optionsHtml}
+          <div class="search-box">
+            <input type="text" class="form-control" placeholder="Search student name or ID..." onkeyup="TeacherView.filterRoster(this.value)">
           </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <button class="btn btn-secondary" ${Quiz.currentIndex === 0 ? 'disabled' : ''} onclick="Quiz.previousQuestion(); Router.renderQuizStep(document.getElementById('page-body-container'));">&larr; Previous</button>
-          
-          ${currentQNum === totalQ ? `
-            <button class="btn btn-primary" onclick="Router.handleQuizSubmit()">SUBMIT EVALUATION &rarr;</button>
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Student ID</th>
+                  <th>Branch / Section</th>
+                  <th>Academic Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="teacher-roster-tbody">
+                ${users.map(u => `
+                  <tr>
+                    <td><strong>${u.name}</strong></td>
+                    <td>${u.id}</td>
+                    <td>${u.branch || 'Computer Science'} (${u.classId || 'Sec-A'})</td>
+                    <td><span class="badge ${u.streakDays > 5 ? 'badge-low' : 'badge-medium'}">${u.streakDays || 1}-Day Active Streak</span></td>
+                    <td>
+                      <button class="btn btn-secondary btn-sm" onclick="TeacherView.openStudentProfileModal('${u.id}')">Profile</button>
+                      <button class="btn btn-primary btn-sm" onclick="TeacherView.openCreateInterventionModal('${u.id}')">Intervene</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderTeacherClasses() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const classes = Storage.getClasses();
+    const subjects = Storage.getSubjects();
+
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">CLASSES & CURRICULUM SUBJECTS</h1>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:1.25rem; margin-bottom:2rem;">
+          ${classes.map(c => `
+            <div class="card card-gradient-border">
+              <span class="badge badge-cyan" style="margin-bottom:0.5rem;">Section ${c.section}</span>
+              <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin-bottom:0.35rem;">${c.name}</h3>
+              <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">Total Students Enrolled: <strong>${c.studentCount}</strong></p>
+              <button class="btn btn-outline btn-sm" style="width:100%;" onclick="Router.navigate('/teacher-students')">View Roster &rarr;</button>
+            </div>
+          `).join('')}
+        </div>
+
+        <h2 style="font-size:1.25rem; font-weight:700; color:var(--text-primary); margin-bottom:1rem;">Assigned Course Subjects</h2>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1rem;">
+          ${subjects.slice(0, 5).map(s => `
+            <div class="card">
+              <span class="badge badge-medium" style="margin-bottom:0.35rem;">${s.code}</span>
+              <h4 style="font-weight:700; font-size:1rem;">${s.name}</h4>
+              <p class="text-xs text-muted">${s.semester}</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  renderTeacherPerformance() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">STUDENT ACADEMIC PERFORMANCE MATRIX</h1>
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
+          <h3>Class Average Overview</h3>
+          <p class="text-sm text-secondary" style="margin-bottom:1rem;">Aggregated analytics for B.Tech Computer Science (Semester 3)</p>
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; text-align:center;">
+            <div style="background:var(--bg-tertiary); padding:1rem; border-radius:var(--radius-sm);">
+              <div style="font-size:1.8rem; font-weight:800; color:var(--accent-cyan);">74%</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Overall Class Score</div>
+            </div>
+            <div style="background:var(--bg-tertiary); padding:1rem; border-radius:var(--radius-sm);">
+              <div style="font-size:1.8rem; font-weight:800; color:var(--accent-emerald);">82%</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Data Structures Accuracy</div>
+            </div>
+            <div style="background:var(--bg-tertiary); padding:1rem; border-radius:var(--radius-sm);">
+              <div style="font-size:1.8rem; font-weight:800; color:var(--accent-rose);">48%</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">DBMS Normalization Score</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderTeacherTopics() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const topics = Storage.getTopics();
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">CONCEPT MASTERY & WEAK TOPICS ANALYTICS</h1>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:1.25rem;">
+          ${topics.slice(0, 6).map(t => `
+            <div class="card ${t.id === 'TOP_DBMS_NORM' ? 'card-gradient-border' : ''}">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                <span class="badge ${t.difficulty === 'Hard' ? 'badge-high' : t.difficulty === 'Medium' ? 'badge-medium' : 'badge-low'}">${t.difficulty}</span>
+                <span style="font-size:0.75rem; color:var(--text-muted);">${t.unit}</span>
+              </div>
+              <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">${t.name}</h3>
+              <div style="font-size:0.8rem; color:var(--text-muted);">Prerequisite: ${t.prerequisiteId || 'None'}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  renderTeacherInterventions() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const list = Storage.getInterventions();
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">AI EARLY INTERVENTIONS LOG (${list.length})</h1>
+            <p style="font-size:0.875rem; color:var(--text-muted);">Targeted student remediation alerts sent by instructors.</p>
+          </div>
+          <button class="btn btn-primary" onclick="TeacherView.openCreateInterventionModal()">+ Send New Intervention</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+          ${list.map(i => `
+            <div class="card card-gradient-border">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                <span class="badge badge-cyan">${i.type}</span>
+                <span class="badge badge-high">${i.status}</span>
+              </div>
+              <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">Target Student: ${i.studentId} — ${i.topicName}</h3>
+              <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:0.5rem;">"${i.note}"</p>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Created by ${i.teacherName} on ${new Date(i.createdAt).toLocaleDateString()}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  renderTeacherQuizzes() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const questions = Storage.getQuestions();
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">QUIZ MANAGEMENT & QUESTION BANK (${questions.length})</h1>
+            <p style="font-size:0.875rem; color:var(--text-muted);">Verified MCQ question repository.</p>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:1rem;">
+          ${questions.slice(0, 5).map((q, idx) => `
+            <div class="card">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.35rem;">
+                <span class="badge badge-cyan">${q.subjectId}</span>
+                <span class="badge badge-medium">${q.difficulty}</span>
+              </div>
+              <h4 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">Q${idx + 1}: ${q.question}</h4>
+              <div style="font-size:0.8rem; color:var(--text-secondary); display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                ${q.options.map((opt, i) => `<div style="padding:0.25rem 0.5rem; background:var(--bg-tertiary); border-radius:4px; ${i === q.correctAnswer ? 'border:1px solid #10B981; color:#10B981;' : ''}">${String.fromCharCode(65 + i)}. ${opt}</div>`).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  renderTeacherReports() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">INSTRUCTOR REPORTS & EVALUATION SUMMARY</h1>
+        <div class="card card-gradient-border">
+          <h3>Semester 3 Comprehensive Diagnostic Report</h3>
+          <p class="text-sm text-secondary" style="margin-top:0.5rem; margin-bottom:1.25rem;">Includes quiz completion stats, student risk rosters, and AI early intervention tracking.</p>
+          <button class="btn btn-primary" onclick="Notifications.toast('Downloading PDF summary report...', 'info')">📄 Download Class Performance PDF</button>
+        </div>
+      </div>
+    `;
+  }
+
+  renderAdminDashboard() {
+    const container = document.getElementById('page-body-container');
+    if (container && window.AdminView) AdminView.renderDashboard(container);
+  }
+
+  renderAdminUsers() {
+    this.renderAdminDashboard();
+  }
+
+  renderAdminStudents() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const users = Storage.getUsers().filter(u => u.role === 'student');
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">REGISTERED STUDENT ACCOUNTS (${users.length})</h1>
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Student ID</th>
+                  <th>Full Name</th>
+                  <th>Institution Code</th>
+                  <th>Branch & Semester</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${users.map(u => `
+                  <tr>
+                    <td><strong>${u.id}</strong></td>
+                    <td>${u.name}</td>
+                    <td>${u.schoolCode || 'ECB'}</td>
+                    <td>${u.branch || 'Computer Science'} (${u.semester || 'Semester 3'})</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderAdminTeachers() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const users = Storage.getUsers().filter(u => u.role === 'teacher');
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">INSTITUTION TEACHER ACCOUNTS (${users.length})</h1>
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Teacher ID</th>
+                  <th>Full Name</th>
+                  <th>Subject</th>
+                  <th>Assigned Classes</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${users.map(u => `
+                  <tr>
+                    <td><strong>${u.id}</strong></td>
+                    <td>${u.name}</td>
+                    <td>${u.subject || 'DBMS'}</td>
+                    <td>${(u.assignedClasses || ['Sec-A']).join(', ')}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderAdminClasses() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const classes = Storage.getClasses();
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">INSTITUTION CLASS SECTIONS (${classes.length})</h1>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:1.25rem;">
+          ${classes.map(c => `
+            <div class="card card-gradient-border">
+              <span class="badge badge-cyan" style="margin-bottom:0.5rem;">Section ${c.section}</span>
+              <h3 style="font-size:1.2rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">${c.name}</h3>
+              <p style="font-size:0.875rem; color:var(--text-muted);">Enrolled Capacity: ${c.studentCount} Students</p>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  renderAdminSubjects() {
+    this.renderSubjects();
+  }
+
+  renderAdminAnalytics() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const users = Storage.getUsers();
+    const questions = Storage.getQuestions();
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">SYSTEM ANALYTICS & PLATFORM HEALTH</h1>
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:1rem; margin-bottom:2rem;">
+          <div class="card text-center">
+            <div style="font-size:2rem; font-weight:800; color:var(--accent-cyan);">${users.length}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">Active Accounts</div>
+          </div>
+          <div class="card text-center">
+            <div style="font-size:2rem; font-weight:800; color:var(--accent-purple);">${questions.length}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">MCQ Items</div>
+          </div>
+          <div class="card text-center">
+            <div style="font-size:2rem; font-weight:800; color:var(--accent-emerald);">99.9%</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">System Uptime</div>
+          </div>
+          <div class="card text-center">
+            <div style="font-size:2rem; font-weight:800; color:var(--accent-amber);">100%</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">Role Protection</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderAdminReports() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">SYSTEM AUDIT & INSTITUTION REPORTS</h1>
+        <div class="card card-gradient-border">
+          <h3>Institution Infrastructure Audit Report</h3>
+          <p class="text-sm text-secondary" style="margin-top:0.5rem; margin-bottom:1.25rem;">Complete breakdown of student registration, instructor assignments, and system logs.</p>
+          <button class="btn btn-primary" onclick="Notifications.toast('System Audit Report exported.', 'success')">📋 Export Audit Log</button>
+        </div>
+      </div>
+    `;
+  }
+
+  renderSubjects() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const subjects = Storage.getSubjects();
+
+    if (subjects.length === 0) {
+      container.innerHTML = `
+        <div class="fade-in" style="padding-top:1rem;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">MY SUBJECTS (0)</h1>
+              <p style="font-size:0.875rem; color:var(--text-muted);">Computer Science & Engineering Syllabus</p>
+            </div>
+            <button class="btn btn-primary" onclick="SubjectManager.showAddSubjectModal()">
+              <i class="ri-add-line"></i> + Add Subject
+            </button>
+          </div>
+
+          <div class="card card-gradient-border" style="text-align:center; padding:3.5rem 2rem; max-width:580px; margin:2rem auto;">
+            <div style="font-size:3.5rem; margin-bottom:1rem;">📚</div>
+            <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-primary); margin-bottom:0.5rem;">No subjects added yet</h2>
+            <p style="font-size:0.875rem; color:var(--text-muted); margin-bottom:1.75rem; line-height:1.5;">
+              Add your first subject with its syllabus and PYQs to begin your personalized learning journey.
+            </p>
+            <button class="btn btn-primary btn-lg" onclick="SubjectManager.showAddSubjectModal()">
+              <i class="ri-add-line"></i> + Add Subject
+            </button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">MY SUBJECTS (${subjects.length})</h1>
+            <p style="font-size:0.875rem; color:var(--text-muted);">Computer Science & Engineering Syllabus</p>
+          </div>
+          <button class="btn btn-primary" onclick="SubjectManager.showAddSubjectModal()">
+            <i class="ri-add-line"></i> + Add Subject
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:1.25rem;">
+          ${subjects.map(s => {
+            const hasSyllabusPdf = Boolean(s.syllabusFile);
+            const hasManualSyllabus = Boolean(s.manualSyllabus && s.manualSyllabus.trim());
+            const hasSyllabus = hasSyllabusPdf || hasManualSyllabus;
+            const hasPyq = Boolean(s.pyqFile);
+
+            let statusBadge = '<span class="badge badge-cyan">✓ Resources Ready</span>';
+            if (!hasSyllabus && !hasPyq) {
+              statusBadge = '<span class="badge badge-secondary" style="opacity:0.8;">Basic Subject</span>';
+            } else if (!hasSyllabus || !hasPyq) {
+              statusBadge = '<span class="badge badge-purple">Partially Prepared</span>';
+            }
+
+            return `
+              <div class="card card-gradient-border" style="position:relative; display:flex; flex-direction:column; justify-content:space-between; height:100%;">
+                <div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem;">
+                    <span class="badge badge-cyan">${s.code || 'SUB101'}</span>
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                      ${statusBadge}
+                      <div style="position:relative;">
+                        <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.55rem; font-weight:bold;" onclick="SubjectManager.toggleCardDropdown(event, '${s.id}')" title="Subject Options">
+                          ⋮
+                        </button>
+                        <div id="sub-dropdown-${s.id}" class="header-profile-dropdown" style="right:0; top:110%; width:145px; z-index:var(--z-dropdown);">
+                          <a class="dropdown-item" onclick="SubjectManager.showEditSubjectModal('${s.id}')">✏️ Edit Subject</a>
+                          <div style="height:1px; background:var(--border-color); margin:0.25rem 0;"></div>
+                          <a class="dropdown-item text-danger" onclick="SubjectManager.confirmDeleteSubject('${s.id}')">🗑️ Delete Subject</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem; line-height:1.3;">📘 ${s.name}</h3>
+                  <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.85rem;">${s.semester || 'Semester 3'}</p>
+
+                  <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:1rem;">
+                    ${hasSyllabusPdf ? `
+                      <span style="font-size:0.725rem; font-weight:600; padding:0.2rem 0.5rem; background:rgba(16,185,129,0.12); color:#10B981; border-radius:4px; border:1px solid rgba(16,185,129,0.25);">
+                        Syllabus ✓ (PDF)
+                      </span>
+                    ` : hasManualSyllabus ? `
+                      <span style="font-size:0.725rem; font-weight:600; padding:0.2rem 0.5rem; background:rgba(16,185,129,0.12); color:#10B981; border-radius:4px; border:1px solid rgba(16,185,129,0.25);">
+                        Syllabus ✓ (Manual)
+                      </span>
+                    ` : `
+                      <span style="font-size:0.725rem; font-weight:600; padding:0.2rem 0.5rem; background:rgba(245,158,11,0.12); color:#FBBF24; border-radius:4px; border:1px solid rgba(245,158,11,0.25);">
+                        ⚠ Syllabus missing
+                      </span>
+                    `}
+
+                    ${hasPyq ? `
+                      <span style="font-size:0.725rem; font-weight:600; padding:0.2rem 0.5rem; background:rgba(6,182,212,0.12); color:var(--accent-cyan); border-radius:4px; border:1px solid rgba(6,182,212,0.25);">
+                        PYQs ✓
+                      </span>
+                    ` : `
+                      <span style="font-size:0.725rem; font-weight:600; padding:0.2rem 0.5rem; background:rgba(245,158,11,0.12); color:#FBBF24; border-radius:4px; border:1px solid rgba(245,158,11,0.25);">
+                        ⚠ PYQs missing
+                      </span>
+                    `}
+                  </div>
+
+                  <div style="margin-bottom:1.15rem;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-bottom:0.25rem;">
+                      <span>Learning Progress</span>
+                      <strong style="color:var(--accent-cyan);">${s.progress || 0}%</strong>
+                    </div>
+                    <div style="height:6px; background:var(--bg-tertiary); border-radius:var(--radius-full); overflow:hidden;">
+                      <div style="width:${s.progress || 0}%; height:100%; background:var(--gradient-primary);"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:flex; gap:0.5rem; border-top:1px solid var(--border-color); padding-top:0.85rem; margin-top:auto;">
+                  <button class="btn btn-primary btn-sm" style="flex:1;" onclick="SubjectManager.openSubjectDetails('${s.id}')">
+                    Open Subject <i class="ri-arrow-right-line"></i>
+                  </button>
+                  ${(!hasSyllabus || !hasPyq) ? `
+                    <button class="btn btn-outline btn-sm" onclick="SubjectManager.showEditSubjectModal('${s.id}')" title="Add Resources">
+                      + Add Resources
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  renderSubjectDetails(subjectId) {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const targetId = subjectId || (this.activeDetailSubjectId || 'SUB_DBMS');
+    this.activeDetailSubjectId = targetId;
+
+    const s = Storage.getSubjectById(targetId);
+    if (!s) {
+      this.renderSubjects();
+      return;
+    }
+
+    const hasSyllabusPdf = Boolean(s.syllabusFile);
+    const hasManualSyllabus = Boolean(s.manualSyllabus && s.manualSyllabus.trim());
+    const hasPyq = Boolean(s.pyqFile);
+
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem; max-width:900px;">
+        <button class="btn btn-secondary btn-sm" style="margin-bottom:1.25rem;" onclick="Router.navigate('/subjects')">
+          ← Back to My Subjects
+        </button>
+
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+            <div>
+              <span class="badge badge-cyan" style="margin-bottom:0.35rem;">${s.code || 'SUB101'}</span>
+              <h1 style="font-size:1.6rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem;">📘 ${s.name}</h1>
+              <p style="font-size:0.875rem; color:var(--text-muted);">${s.semester || 'Semester 3'} • Computer Science & Engineering</p>
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+              <button class="btn btn-outline btn-sm" onclick="SubjectManager.showEditSubjectModal('${s.id}')">✏️ Edit Subject</button>
+              <button class="btn btn-danger btn-sm" onclick="SubjectManager.confirmDeleteSubject('${s.id}')">🗑️ Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.25rem; margin-bottom:1.5rem;">
+          <!-- SYLLABUS CARD -->
+          <div class="card">
+            <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin-bottom:0.75rem;">Syllabus Status</h3>
+            ${hasSyllabusPdf ? `
+              <div style="display:flex; align-items:center; gap:0.75rem; background:var(--bg-tertiary); padding:0.75rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                <span style="font-size:1.5rem;">📄</span>
+                <div>
+                  <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">${s.syllabusFile.name}</div>
+                  <div style="font-size:0.75rem; color:#10B981;">✓ Syllabus PDF Uploaded (${s.syllabusFile.size})</div>
+                </div>
+              </div>
+            ` : hasManualSyllabus ? `
+              <div style="background:var(--bg-tertiary); padding:0.75rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                <div style="font-size:0.85rem; font-weight:700; color:#10B981; margin-bottom:0.35rem;">✓ Manual Syllabus Entered</div>
+                <div style="font-size:0.775rem; color:var(--text-secondary); white-space:pre-line;">${s.manualSyllabus}</div>
+              </div>
+            ` : `
+              <div style="background:rgba(245, 158, 11, 0.08); padding:0.75rem 1rem; border-radius:var(--radius-sm); border:1px solid rgba(245, 158, 11, 0.3);">
+                <div style="font-size:0.85rem; font-weight:700; color:#FBBF24; margin-bottom:0.25rem;">⚠️ Syllabus Not Provided</div>
+                <p style="font-size:0.775rem; color:var(--text-muted); margin:0 0 0.5rem 0;">Add your syllabus to help EduNexus build a more accurate personalized learning path.</p>
+                <button class="btn btn-secondary btn-sm" onclick="SubjectManager.showEditSubjectModal('${s.id}')">+ Add Syllabus</button>
+              </div>
+            `}
+          </div>
+
+          <!-- PYQ CARD -->
+          <div class="card">
+            <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin-bottom:0.75rem;">Previous Year Questions (PYQ)</h3>
+            ${hasPyq ? `
+              <div style="display:flex; align-items:center; gap:0.75rem; background:var(--bg-tertiary); padding:0.75rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                <span style="font-size:1.5rem;">📄</span>
+                <div>
+                  <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">${s.pyqFile.name}</div>
+                  <div style="font-size:0.75rem; color:var(--accent-cyan);">✓ PYQ PDF Uploaded (${s.pyqFile.size})</div>
+                </div>
+              </div>
+            ` : `
+              <div style="background:rgba(245, 158, 11, 0.08); padding:0.75rem 1rem; border-radius:var(--radius-sm); border:1px solid rgba(245, 158, 11, 0.3);">
+                <div style="font-size:0.85rem; font-weight:700; color:#FBBF24; margin-bottom:0.25rem;">⚠️ PYQs Not Uploaded</div>
+                <p style="font-size:0.775rem; color:var(--text-muted); margin:0 0 0.5rem 0;">Upload PYQs to improve practice question relevance and exam recommendations.</p>
+                <button class="btn btn-secondary btn-sm" onclick="SubjectManager.showEditSubjectModal('${s.id}')">+ Upload PYQs</button>
+              </div>
+            `}
+          </div>
+        </div>
+
+        <!-- ADDITIONAL STUDY MATERIAL -->
+        <div class="card" style="margin-bottom:1.5rem;">
+          <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin-bottom:0.75rem;">Additional Study Material</h3>
+          ${s.additionalMaterials && s.additionalMaterials.length > 0 ? `
+            <div style="display:flex; flex-direction:column; gap:0.5rem;">
+              ${s.additionalMaterials.map(m => `
+                <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-tertiary); padding:0.6rem 0.85rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                  <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <span>📄</span>
+                    <span style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">${m.name}</span>
+                  </div>
+                  <span style="font-size:0.75rem; color:var(--text-muted);">${m.size}</span>
+                </div>
+              `).join('')}
+            </div>
           ` : `
-            <button class="btn btn-primary" onclick="Quiz.nextQuestion(); Router.renderQuizStep(document.getElementById('page-body-container'));">Next &rarr;</button>
+            <p style="font-size:0.85rem; color:var(--text-muted);">No additional study material uploaded yet.</p>
           `}
         </div>
-      </div>
-    `;
 
-    container.innerHTML = html;
-    Quiz.updateTimerDisplay();
-  }
-
-  handleQuizSubmit() {
-    const res = Quiz.submitQuiz();
-    if (!res) return;
-
-    const body = `
-      <div style="text-align: center; padding: 1rem 0;">
-        <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">${res.score >= 70 ? '🎉' : '⚠️'}</div>
-        <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.35rem;">EVALUATION COMPLETE</h3>
-        <p style="font-size: 2.2rem; font-weight: 800; color: var(--accent-cyan);" id="quiz-score-counter-el">0%</p>
-        <p class="text-sm text-secondary" style="margin-bottom: 1.5rem;">
-          ${res.correctCount} out of ${res.totalQuestions} questions answered correctly.
-        </p>
-
-        <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md); text-align: left;">
-          <h4 style="font-weight: 700; color: var(--accent-cyan); margin-bottom: 0.35rem;"><span class="ai-sparkle-icon">✦</span> EduNexus AI Analysis</h4>
-          <p style="font-size: 0.85rem; color: var(--text-primary);">
-            ${res.score < 50 ? `Learning gap detected in ${res.topicName}. Prerequisite revision path updated.` : `Great job! Mastery in ${res.topicName} updated.`}
-          </p>
+        <!-- QUICK ACTIONS -->
+        <div class="card card-gradient-border" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h3 style="font-size:1.1rem; font-weight:700;">Personalized Subject Learning</h3>
+            <p style="font-size:0.85rem; color:var(--text-muted);">Start practicing questions or explore your AI learning path for this subject.</p>
+          </div>
+          <div style="display:flex; gap:0.75rem;">
+            <button class="btn btn-primary" onclick="Quiz.startQuiz('${s.id}'); Router.navigate('/quiz');">
+              🎯 Start Practice Quiz
+            </button>
+            <button class="btn btn-outline" onclick="Router.navigate('/learning-path')">
+              🌿 View Learning Path
+            </button>
+          </div>
         </div>
       </div>
     `;
-
-    const footer = `
-      <button class="btn btn-primary w-full" onclick="Notifications.closeModal(); Router.navigate('/learning-path');">View Updated Learning Path</button>
-    `;
-
-    Notifications.openModal('Quiz Result & AI Evaluation', body, footer);
-
-    setTimeout(() => {
-      Animations.animateCountUp(document.getElementById('quiz-score-counter-el'), res.score, 1000, '%');
-    }, 150);
   }
 
-  renderLearningPathView(container) {
-    const user = Auth.getCurrentUser();
+  renderTopics() {
+    this.renderSubjects();
+  }
+
+  renderQuiz() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+
+    if (Quiz.viewMode === 'active' && Quiz.currentQuiz) {
+      Quiz.renderActiveQuiz('page-body-container');
+    } else if (Quiz.viewMode === 'results' && Quiz.lastResult) {
+      Quiz.renderResults(Quiz.lastResult, 'page-body-container');
+    } else {
+      Quiz.renderHub('page-body-container');
+    }
+  }
+
+  renderQuizResults(res) {
+    Quiz.renderResults(res, 'page-body-container');
+  }
+
+  renderLearningPath() {
+    LearningPath.render('page-body-container');
+  }
+
+  renderProgress() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const weekly = AIEngine.getWeeklyAnalysis();
+
     container.innerHTML = `
-      <div class="stagger-section stagger-1">
-        <div style="margin-bottom: 1.5rem;">
-          <h2 style="font-size: 1.5rem; font-weight: 800;">Personalized Learning Path</h2>
-          <p class="text-sm text-secondary">AI-generated sequence designed for prerequisite recovery and topic mastery.</p>
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.25rem;">ACADEMIC PROGRESS & PERFORMANCE TRENDS</h1>
+        <div class="card card-gradient-border">
+          <h3>Weekly Score Trend</h3>
+          <p>Average Accuracy: <strong>${weekly.currentAvgScore}%</strong> (${weekly.scoreChangePercent} change vs last week)</p>
         </div>
-        <div id="path-visualizer-target"></div>
       </div>
     `;
-    LearningPath.renderPathContainer(document.getElementById('path-visualizer-target'), user ? user.id : 'ECB0245');
   }
 
-  renderSettingsView(container) {
-    const user = Auth.getCurrentUser();
-    let html = `
-      <div class="stagger-section stagger-1">
-        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem;">Settings & Preferences</h2>
-        <div class="card" style="margin-bottom: 1.5rem;">
-          <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">Theme Configuration</h3>
-          <div style="display: flex; align-items: center; gap: 1rem;">
-            <button class="btn btn-outline" onclick="Router.toggleTheme('dark')">🌙 Night Mode</button>
-            <button class="btn btn-secondary" onclick="Router.toggleTheme('light')">☀ Light Mode</button>
+  renderAchievements() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+
+    const user = Auth.getCurrentUser() || { id: 'ECB0245', achievements: [] };
+    const history = Storage.getMindfulHistory(user.id);
+    const isGoalDone = MindfulBreak.isDailyGoalCompleted(user.id);
+    const isCompletedToday = MindfulBreak.hasCompletedToday(user.id);
+
+    const userBadges = user.achievements || [];
+    const bestScore = history.length > 0 ? Math.max(...history.map(h => h.focusScore || 80)) : 0;
+    const totalXP = user.mindfulXP || 0;
+
+    container.innerHTML = `
+      <div class="fade-in" style="padding-top:0.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">ACHIEVEMENTS & MINDFUL REFRESH</h1>
+            <p style="font-size:0.875rem; color:var(--text-muted);">Real activity unlocks & mental focus wellness rewards.</p>
+          </div>
+          <div style="background:var(--bg-secondary); border:1px solid var(--border-color); padding:0.5rem 1rem; border-radius:var(--radius-md); font-weight:700; color:#10B981;">
+            ⭐ Total XP: ${totalXP}
           </div>
         </div>
 
-        <div class="card" style="margin-bottom: 1.5rem;">
-          <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">Account Profile</h3>
-          <p class="text-sm text-secondary">ID: ${user?.id} • Role: ${user?.role.toUpperCase()} • Course: ${user?.branch || 'Computer Science'}</p>
+        <!-- 1. SYSTEM BADGES GRID -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:1.15rem; margin-bottom:2rem;">
+          <div class="card card-gradient-border" style="background:${userBadges.includes('first_quiz') ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-tertiary)'}; border-color:${userBadges.includes('first_quiz') ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-color)'};">
+            <div style="font-size:1.6rem; margin-bottom:0.25rem;">🎯</div>
+            <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">FIRST QUIZ</div>
+            <div style="font-size:0.75rem; color:${userBadges.includes('first_quiz') ? '#10B981' : 'var(--text-muted)'};">${userBadges.includes('first_quiz') ? 'Unlocked' : 'Locked'}</div>
+          </div>
+
+          <div class="card card-gradient-border" style="background:${userBadges.includes('streak_5') ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-tertiary)'}; border-color:${userBadges.includes('streak_5') ? 'rgba(245, 158, 11, 0.3)' : 'var(--border-color)'};">
+            <div style="font-size:1.6rem; margin-bottom:0.25rem;">🔥</div>
+            <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">7-DAY STREAK</div>
+            <div style="font-size:0.75rem; color:#F59E0B;">5 / 7 Days</div>
+          </div>
+
+          <div class="card card-gradient-border" style="background:${userBadges.includes('topic_master') ? 'rgba(139, 92, 246, 0.1)' : 'var(--bg-tertiary)'}; border-color:${userBadges.includes('topic_master') ? 'rgba(139, 92, 246, 0.3)' : 'var(--border-color)'};">
+            <div style="font-size:1.6rem; margin-bottom:0.25rem;">👑</div>
+            <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">TOPIC MASTER</div>
+            <div style="font-size:0.75rem; color:var(--accent-purple);">${userBadges.includes('topic_master') ? 'Unlocked' : 'Locked'}</div>
+          </div>
+
+          <div class="card card-gradient-border" style="background:${userBadges.includes('mindful_learner') ? 'rgba(6, 182, 212, 0.1)' : 'var(--bg-tertiary)'}; border-color:${userBadges.includes('mindful_learner') ? 'rgba(6, 182, 212, 0.3)' : 'var(--border-color)'};">
+            <div style="font-size:1.6rem; margin-bottom:0.25rem;">🧠</div>
+            <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">MINDFUL LEARNER</div>
+            <div style="font-size:0.75rem; color:var(--accent-cyan);">${userBadges.includes('mindful_learner') ? 'Unlocked (3 Breaks)' : '3 Breaks Needed'}</div>
+          </div>
+
+          <div class="card card-gradient-border" style="background:${userBadges.includes('focus_master') ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-tertiary)'}; border-color:${userBadges.includes('focus_master') ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-color)'};">
+            <div style="font-size:1.6rem; margin-bottom:0.25rem;">🎯</div>
+            <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">FOCUS MASTER</div>
+            <div style="font-size:0.75rem; color:#10B981;">${userBadges.includes('focus_master') ? 'Unlocked (7 Breaks)' : '7 Breaks Needed'}</div>
+          </div>
         </div>
 
-        <div class="card" style="border-color: rgba(239, 68, 68, 0.3);">
-          <h3 style="font-size: 1.1rem; font-weight: 700; color: #F87171; margin-bottom: 0.5rem;">Platform Reset</h3>
-          <p class="text-sm text-secondary" style="margin-bottom: 1rem;">Reset LocalStorage data back to default state.</p>
-          <button class="btn btn-danger" onclick="Router.confirmResetDemoData()">RESET PLATFORM STATE</button>
+        <!-- 2. 🧠 MINDFUL BREAK SECTION -->
+        <div class="card card-gradient-border" style="margin-bottom:2rem; background:linear-gradient(135deg, rgba(6, 182, 212, 0.06), rgba(139, 92, 246, 0.06));">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem;">
+            <div>
+              <span class="badge badge-cyan" style="margin-bottom:0.35rem;">Daily Focus Refresh</span>
+              <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:0.5rem;">
+                🧠 MINDFUL BREAK
+              </h2>
+              <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.2rem;">
+                Take a short 60-second mental refresh after completing your learning goals.
+              </p>
+            </div>
+            ${isCompletedToday ? `
+              <div style="background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.3); padding:0.6rem 1.15rem; border-radius:var(--radius-md); color:#10B981; font-weight:700; font-size:0.9rem;">
+                ✓ Today's Mindful Break Completed (+20 XP)
+              </div>
+            ` : isGoalDone ? `
+              <button class="btn btn-primary btn-lg" onclick="MindfulBreak.startSession('${user.id}')">
+                [ START MINDFUL BREAK ] →
+              </button>
+            ` : `
+              <button class="btn btn-secondary btn-lg" disabled style="opacity:0.6; cursor:not-allowed;">
+                🔒 Mindful Break Locked
+              </button>
+            `}
+          </div>
+
+          ${!isGoalDone ? `
+            <div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1rem; font-size:0.85rem; color:var(--text-muted);">
+              🔒 <strong>Complete today's learning goals to unlock your mindful break.</strong>
+              <div style="margin-top:0.25rem; font-size:0.8rem;">Head over to Dashboard and complete at least one task on Today's To-Do List.</div>
+            </div>
+          ` : isCompletedToday ? `
+            <div style="background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:1rem; font-size:0.85rem; color:var(--text-secondary);">
+              🎉 <strong>You've completed today's mental refresh session!</strong> Come back tomorrow after finishing your next daily learning goals for another +20 XP refresh.
+            </div>
+          ` : `
+            <div style="background:rgba(6, 182, 212, 0.1); border:1px solid rgba(6, 182, 212, 0.3); border-radius:var(--radius-md); padding:1rem; font-size:0.85rem; color:var(--accent-cyan);">
+              ✨ <strong>You've completed today's learning goals!</strong> Click above to launch a 60-second focus mini-game refresh.
+            </div>
+          `}
+        </div>
+
+        <!-- 3. MINDFUL PROGRESS & RECENT HISTORY -->
+        <div style="display:grid; grid-template-columns:1fr 2fr; gap:1.25rem;">
+          <div class="card card-gradient-border">
+            <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:1rem;">MINDFUL PROGRESS</h3>
+            <div style="display:flex; flex-direction:column; gap:1rem;">
+              <div style="background:var(--bg-tertiary); padding:0.85rem; border-radius:var(--radius-sm);">
+                <div style="font-size:0.75rem; color:var(--text-muted);">MINDFUL BREAKS COMPLETED</div>
+                <div style="font-size:1.5rem; font-weight:800; color:var(--accent-cyan); margin:0.2rem 0;">${history.length} / 7</div>
+                <div style="height:4px; background:var(--border-color); border-radius:var(--radius-full); overflow:hidden;">
+                  <div style="width:${Math.min(100, Math.round((history.length / 7) * 100))}%; height:100%; background:var(--accent-cyan);"></div>
+                </div>
+              </div>
+
+              <div style="background:var(--bg-tertiary); padding:0.85rem; border-radius:var(--radius-sm);">
+                <div style="font-size:0.75rem; color:var(--text-muted);">BEST FOCUS SCORE</div>
+                <div style="font-size:1.5rem; font-weight:800; color:var(--accent-purple); margin:0.2rem 0;">${bestScore}%</div>
+                <div style="font-size:0.75rem; color:#10B981;">High Mental Clarity</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-gradient-border">
+            <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:1rem;">RECENT MINDFUL BREAKS</h3>
+            <div style="display:flex; flex-direction:column; gap:0.65rem;">
+              ${history.length === 0 ? `
+                <div style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.85rem;">
+                  No Mindful Break sessions completed yet. Unlock your first break today!
+                </div>
+              ` : history.slice(-4).reverse().map(h => `
+                <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-tertiary); padding:0.75rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                  <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <span style="font-size:1.2rem;">🧠</span>
+                    <div>
+                      <div style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">${h.gameName}</div>
+                      <div style="font-size:0.725rem; color:var(--text-muted);">${h.date}</div>
+                    </div>
+                  </div>
+                  <div style="font-size:0.9rem; font-weight:800; color:var(--accent-cyan);">
+                    ${h.focusScore}% Focus
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
         </div>
       </div>
     `;
-    container.innerHTML = html;
   }
 
-  toggleTheme(mode) {
-    document.documentElement.setAttribute('data-theme', mode);
-    Notifications.toast(`Theme updated to ${mode} mode.`, 'success');
-  }
+  renderSettings() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+    const user = Auth.getCurrentUser() || { name: 'User', email: 'user@edunexus.edu', mobileNumber: '+91 9876543210' };
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
 
-  confirmResetDemoData() {
-    const body = `<p>Reset all local storage data to initial state?</p>`;
-    const footer = `
-      <button class="btn btn-secondary" onclick="Notifications.closeModal()">Cancel</button>
-      <button class="btn btn-danger" onclick="Storage.resetDemoData(); Notifications.closeModal(); Auth.logout(); Notifications.toast('Platform state reset successfully.', 'success');">Confirm Reset</button>
+    container.innerHTML = `
+      <div class="fade-in" style="max-width:800px; padding-top:0.5rem;">
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">
+          ACCOUNT SETTINGS
+        </h1>
+
+        <!-- 1. ACCOUNT & PROFILE -->
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
+          <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:1rem;">ACCOUNT & PROFILE</h3>
+          <form onsubmit="event.preventDefault(); Router.saveProfileSettings();">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="setting-name" class="form-control" value="${user.name || ''}" required />
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+              <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" id="setting-email" class="form-control" value="${user.email || 'user@edunexus.edu'}" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Mobile Number</label>
+                <input type="text" id="setting-mobile" class="form-control" value="${user.mobileNumber || '+91 9876543210'}" required />
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" style="margin-top:0.5rem;">
+              Save Profile Changes
+            </button>
+          </form>
+        </div>
+
+        <!-- 2. APPEARANCE & THEME MODES -->
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
+          <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">APPEARANCE & VISUAL MODES</h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">Select your preferred visual mode for study sessions.</p>
+
+          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem;">
+            <button class="card ${currentTheme === 'light' ? 'card-gradient-border' : ''}" style="text-align:center; padding:1.25rem 0.85rem; cursor:pointer; background:var(--bg-tertiary); border:${currentTheme === 'light' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)'};" onclick="App.setTheme('light'); Router.renderSettings();">
+              <div style="font-size:1.75rem; margin-bottom:0.35rem;">☀</div>
+              <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">Light Mode</div>
+              <div style="font-size:0.725rem; color:var(--text-muted); margin-top:0.2rem;">Clean & Bright</div>
+            </button>
+
+            <button class="card ${currentTheme === 'dark' ? 'card-gradient-border' : ''}" style="text-align:center; padding:1.25rem 0.85rem; cursor:pointer; background:var(--bg-tertiary); border:${currentTheme === 'dark' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)'};" onclick="App.setTheme('dark'); Router.renderSettings();">
+              <div style="font-size:1.75rem; margin-bottom:0.35rem;">◐</div>
+              <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">Dark Mode</div>
+              <div style="font-size:0.725rem; color:var(--text-muted); margin-top:0.2rem;">Sleek Neon Contrast</div>
+            </button>
+
+            <button class="card ${currentTheme === 'eyecare' ? 'card-gradient-border' : ''}" style="text-align:center; padding:1.25rem 0.85rem; cursor:pointer; background:var(--bg-tertiary); border:${currentTheme === 'eyecare' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)'};" onclick="App.setTheme('eyecare'); Router.renderSettings();">
+              <div style="font-size:1.75rem; margin-bottom:0.35rem;">👁</div>
+              <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">Eye Care</div>
+              <div style="font-size:0.725rem; color:var(--text-muted); margin-top:0.2rem;">Warm Academic Cream</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. LEGAL & INFORMATION SECTION -->
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
+          <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">
+            LEGAL & INFORMATION
+          </h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">
+            Platform terms, AI disclaimers, and project information.
+          </p>
+
+          <div style="display:flex; flex-direction:column; gap:0.65rem;">
+            <!-- Terms & Conditions Row -->
+            <div class="card" style="background:var(--bg-tertiary); padding:0.85rem 1.15rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:transform 0.2s ease, border-color 0.2s ease; border:1px solid var(--border-color);" onclick="Router.navigate('/terms')">
+              <div style="display:flex; align-items:center; gap:0.85rem;">
+                <span style="font-size:1.4rem;">📄</span>
+                <div>
+                  <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">Terms & Conditions</div>
+                  <div style="font-size:0.775rem; color:var(--text-muted);">Platform usage guidelines and academic responsibilities</div>
+                </div>
+              </div>
+              <span style="font-size:1.2rem; color:var(--text-muted);">→</span>
+            </div>
+
+            <!-- Disclaimer Row -->
+            <div class="card" style="background:var(--bg-tertiary); padding:0.85rem 1.15rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:transform 0.2s ease, border-color 0.2s ease; border:1px solid var(--border-color);" onclick="Router.navigate('/disclaimer')">
+              <div style="display:flex; align-items:center; gap:0.85rem;">
+                <span style="font-size:1.4rem;">⚠️</span>
+                <div>
+                  <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">Disclaimer</div>
+                  <div style="font-size:0.775rem; color:var(--text-muted);">Important guidance on AI-generated recommendations and questions</div>
+                </div>
+              </div>
+              <span style="font-size:1.2rem; color:var(--text-muted);">→</span>
+            </div>
+
+            <!-- About EduNexus Row -->
+            <div class="card" style="background:var(--bg-tertiary); padding:0.85rem 1.15rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:transform 0.2s ease, border-color 0.2s ease; border:1px solid var(--border-color);" onclick="Router.navigate('/about')">
+              <div style="display:flex; align-items:center; gap:0.85rem;">
+                <span style="font-size:1.4rem;">ℹ️</span>
+                <div>
+                  <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">About EduNexus</div>
+                  <div style="font-size:0.775rem; color:var(--text-muted);">Platform vision and project overview</div>
+                </div>
+              </div>
+              <span style="font-size:1.2rem; color:var(--text-muted);">→</span>
+            </div>
+
+            <!-- Open Source Licenses Row -->
+            <div class="card" style="background:var(--bg-tertiary); padding:0.85rem 1.15rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:transform 0.2s ease, border-color 0.2s ease; border:1px solid var(--border-color);" onclick="Router.navigate('/licenses')">
+              <div style="display:flex; align-items:center; gap:0.85rem;">
+                <span style="font-size:1.4rem;">📜</span>
+                <div>
+                  <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">Open-Source & Third-Party Licenses</div>
+                  <div style="font-size:0.775rem; color:var(--text-muted);">Attributions for fonts, icons, and libraries</div>
+                </div>
+              </div>
+              <span style="font-size:1.2rem; color:var(--text-muted);">→</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER INFO AT BOTTOM OF SETTINGS -->
+        <div style="text-align:center; padding:1.5rem 0 1rem 0; border-top:1px solid var(--border-color); color:var(--text-muted); font-size:0.8rem;">
+          <div style="font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">EduNexus</div>
+          <div style="font-size:0.75rem;">© 2026 EduNexus. All rights reserved.</div>
+        </div>
+      </div>
     `;
-    Notifications.openModal('Reset Platform State', body, footer);
+  }
+
+  saveProfileSettings() {
+    const user = Auth.getCurrentUser();
+    if (!user) return;
+
+    const name = document.getElementById('setting-name')?.value;
+    const email = document.getElementById('setting-email')?.value;
+    const mobile = document.getElementById('setting-mobile')?.value;
+
+    if (!name || !email || !mobile) return;
+
+    Storage.updateUserProfile(user.id, { name, email, mobileNumber: mobile });
+    if (window.Notifications) Notifications.toast('Profile updated globally across EduNexus!', 'success');
+  }
+
+  renderTerms() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="fade-in" style="max-width:850px; padding-top:0.5rem;">
+        <button class="btn btn-secondary btn-sm" style="margin-bottom:1.25rem;" onclick="Router.navigate('/settings')">
+          ← Back to Settings
+        </button>
+
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
+          <span class="badge badge-cyan" style="margin-bottom:0.35rem;">Legal Information</span>
+          <h1 style="font-size:1.6rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem;">
+            📄 Terms & Conditions
+          </h1>
+          <p style="font-size:0.875rem; color:var(--text-muted);">
+            Platform usage guidelines and academic responsibilities.
+          </p>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:1.25rem; margin-bottom:2rem;">
+          <div class="card">
+            <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">1. Educational Assistance Purpose</h3>
+            <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+              EduNexus is designed as an educational study assistance platform to provide personalized learning roadmaps, diagnostic topic tracking, and practice activities for engineering students.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">2. User Academic Responsibilities</h3>
+            <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+              Students and users are solely responsible for how they utilize the information and recommendations provided by the platform. Users should verify all important academic information using official university syllabi, prescribed textbooks, and institutional faculty resources.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">3. AI-Generated Recommendations & Accuracy</h3>
+            <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+              AI-generated study recommendations, question pools, and topic evaluations are computational aids and may occasionally contain inaccuracies. Users are encouraged to cross-reference key concepts with official course materials.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">4. Uploaded Content & Fair Use</h3>
+            <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+              Any study materials, syllabus files, or previous-year question (PYQ) documents uploaded to EduNexus should belong to the user or be legally permitted for academic use within your educational institution.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">5. Continuous Refinement & Updates</h3>
+            <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+              System features, user interface components, and learning algorithms undergo continuous updates and refinements to support academic excellence.
+            </p>
+          </div>
+        </div>
+
+        <div style="text-align:center; font-size:0.8rem; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:1rem;">
+          Last Updated: August 2026 • EduNexus Platform Terms
+        </div>
+      </div>
+    `;
+  }
+
+  renderDisclaimer() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="fade-in" style="max-width:850px; padding-top:0.5rem;">
+        <button class="btn btn-secondary btn-sm" style="margin-bottom:1.25rem;" onclick="Router.navigate('/settings')">
+          ← Back to Settings
+        </button>
+
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem; border-left:4px solid #F59E0B;">
+          <span class="badge" style="background:rgba(245,158,11,0.2); color:#FBBF24; margin-bottom:0.35rem;">Important Advisory</span>
+          <h1 style="font-size:1.6rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem;">
+            ⚠️ Disclaimer
+          </h1>
+          <p style="font-size:0.875rem; color:var(--text-muted);">
+            Important guidance regarding AI-generated content, academic guarantees, and exam prediction limitations.
+          </p>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:1.25rem; margin-bottom:2rem;">
+          <div class="card">
+            <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">1. Educational Assistance Focus</h3>
+            <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+              EduNexus is designed to provide educational assistance, personalized study roadmaps, diagnostic topic tracking, and practice activities to support student study routines.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">2. AI Content Accuracy Warning</h3>
+            <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+              AI-generated recommendations, question formulations, and concept breakdowns may not always be completely accurate. Students should verify important academic information with official syllabus documents, prescribed textbooks, and university faculty.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">3. No Guarantee of Exam Results or Grades</h3>
+            <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+              EduNexus does <strong>NOT</strong> guarantee examination questions, university examination results, letter grades, class rankings, or academic success. Diagnostic scores within EduNexus reflect practice activity performance within the application only.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">4. Supplementary Assistance Disclaimer</h3>
+            <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+              Recommendations generated by EduNexus are intended as learning assistance and should not be considered a substitute for professional academic instruction or official institutional advising.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">5. Syllabus & PYQ Upload Limitation</h3>
+            <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+              Uploading syllabus and previous-year question (PYQ) documents helps improve the relevance of generated practice questions and learning paths, but does <strong>NOT</strong> guarantee the prediction of future university examination questions.
+            </p>
+          </div>
+        </div>
+
+        <div style="text-align:center; font-size:0.8rem; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:1rem;">
+          EduNexus Educational Advisory
+        </div>
+      </div>
+    `;
+  }
+
+  renderAbout() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="fade-in" style="max-width:850px; padding-top:0.5rem;">
+        <button class="btn btn-secondary btn-sm" style="margin-bottom:1.25rem;" onclick="Router.navigate('/settings')">
+          ← Back to Settings
+        </button>
+
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
+          <span class="badge badge-cyan" style="margin-bottom:0.35rem;">Platform Vision & Overview</span>
+          <h1 style="font-size:1.6rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem;">
+            ℹ️ About EduNexus
+          </h1>
+          <p style="font-size:0.875rem; color:var(--text-muted);">
+            AI-Powered Personalized Learning & Early Intervention Platform
+          </p>
+        </div>
+
+        <!-- 1. MISSION OVERVIEW -->
+        <div class="card" style="margin-bottom:1.25rem;">
+          <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.6rem;">Mission & Platform Concept</h3>
+          <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.65; margin-bottom:0.85rem;">
+            EduNexus personalizes learning by analyzing student performance, quiz results, mistakes, response time, topic-wise performance, and learning progress.
+          </p>
+          <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.65; margin-bottom:0.5rem; font-weight:600;">
+            The platform helps students:
+          </p>
+          <ul style="font-size:0.85rem; color:var(--text-secondary); line-height:1.65; padding-left:1.2rem; margin:0 0 0.85rem 0;">
+            <li>Identify weak areas</li>
+            <li>Follow personalized learning paths</li>
+            <li>Practice through adaptive quizzes</li>
+            <li>Receive targeted recommendations</li>
+          </ul>
+          <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.65; margin:0;">
+            Teachers can use performance insights to identify students who may require additional support.
+          </p>
+        </div>
+
+        <!-- 2. CORE VISION BANNER -->
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem; text-align:center; padding:1.5rem; background:linear-gradient(135deg, rgba(6,182,212,0.1), rgba(139,92,246,0.1));">
+          <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:var(--accent-cyan); margin-bottom:0.25rem;">
+            Vision
+          </div>
+          <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-primary); margin:0;">
+            "Learn smarter. Practice better. Improve continuously."
+          </h2>
+        </div>
+
+        <!-- 3. FOOTER -->
+        <div style="text-align:center; padding:1.5rem 0 1rem 0; border-top:1px solid var(--border-color); color:var(--text-muted); font-size:0.825rem;">
+          <div style="font-weight:800; font-size:1.1rem; color:var(--text-primary); margin-bottom:0.25rem;">EduNexus</div>
+          <div style="font-size:0.75rem;">© 2026 EduNexus. Built for engineering academic excellence.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderLicenses() {
+    const container = document.getElementById('page-body-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="fade-in" style="max-width:850px; padding-top:0.5rem;">
+        <button class="btn btn-secondary btn-sm" style="margin-bottom:1.25rem;" onclick="Router.navigate('/settings')">
+          ← Back to Settings
+        </button>
+
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
+          <span class="badge badge-cyan" style="margin-bottom:0.35rem;">Attributions & Open Source</span>
+          <h1 style="font-size:1.6rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem;">
+            📜 Open-Source & Third-Party Licenses
+          </h1>
+          <p style="font-size:0.875rem; color:var(--text-muted);">
+            Licenses and attributions for third-party libraries, icon sets, and typography used in EduNexus.
+          </p>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:1.15rem; margin-bottom:2rem;">
+          <div class="card">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.35rem;">
+              <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin:0;">Google Fonts (Inter, Outfit, JetBrains Mono)</h3>
+              <span class="badge badge-low">SIL Open Font License 1.1</span>
+            </div>
+            <p style="font-size:0.825rem; color:var(--text-muted); margin:0;">
+              Typography assets for UI headers, body prose, and monospace code/timer displays.
+            </p>
+          </div>
+
+          <div class="card">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.35rem;">
+              <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin:0;">Remix Icon Library</h3>
+              <span class="badge badge-cyan">Apache License 2.0</span>
+            </div>
+            <p style="font-size:0.825rem; color:var(--text-muted); margin:0;">
+              Open-source neutral icon system for navigation icons and status badges.
+            </p>
+          </div>
+
+          <div class="card">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.35rem;">
+              <h3 style="font-size:1rem; font-weight:700; color:var(--text-primary); margin:0;">Chart.js Visualizer</h3>
+              <span class="badge badge-purple">MIT License</span>
+            </div>
+            <p style="font-size:0.825rem; color:var(--text-muted); margin:0;">
+              Canvas charting library for rendering analytics progress trends and performance distributions.
+            </p>
+          </div>
+        </div>
+
+        <div style="text-align:center; font-size:0.8rem; color:var(--text-muted); border-top:1px solid var(--border-color); padding-top:1rem;">
+          EduNexus Open-Source Attributions
+        </div>
+      </div>
+    `;
   }
 }
 
-const Router = new SPARouter();
+const Router = new RouterEngine();
 window.Router = Router;

@@ -1,26 +1,77 @@
 /* ============================================================
-   EDUNEXUS — MASTER APPLICATION INITIALIZER
+   EDUNEXUS — MASTER APPLICATION INITIALIZER & THEME ENGINE
+   PERMANENT FIXED 250PX SIDEBAR • NO COLLAPSE TOGGLES
    ============================================================ */
 
 class AppController {
   constructor() {
+    this.sessionThemeKey = 'edunexus_theme_mode';
     this.init();
   }
 
   init() {
-    document.addEventListener('DOMContentLoaded', () => {
+    const run = () => {
       // 1. Initialize Local Storage Database
-      Storage.init();
+      if (window.Storage) Storage.init();
 
-      // 2. Initial SPA Route Resolution
-      Router.handleRouting();
+      // 2. Restore Persistent Theme Preference
+      this.restoreTheme();
 
-      // 3. Bind Keyboard Accessibility & Click Outside Listeners
+      // 3. Initial SPA Route Resolution
+      if (window.Router) {
+        if (typeof Router.handleRouting === 'function') {
+          Router.handleRouting();
+        } else if (typeof Router.init === 'function') {
+          Router.init();
+        }
+      }
+
+      // 4. Bind Keyboard Accessibility & Click Outside Listeners
       this.bindEventListeners();
 
-      // 4. Initialize Splash Screen Entrance
+      // 5. Initialize Splash Screen Entrance
       this.initSplashScreen();
-    });
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', run);
+    } else {
+      run();
+    }
+  }
+
+  restoreTheme() {
+    try {
+      const theme = localStorage.getItem(this.sessionThemeKey) || 'dark';
+      this.setTheme(theme, false);
+    } catch (e) {
+      console.error('Error restoring theme preference', e);
+      this.setTheme('dark', false);
+    }
+  }
+
+  setTheme(themeName, showToast = true) {
+    const validThemes = ['dark', 'light', 'eyecare'];
+    const selected = validThemes.includes(themeName) ? themeName : 'dark';
+
+    document.documentElement.setAttribute('data-theme', selected);
+
+    try {
+      localStorage.setItem(this.sessionThemeKey, selected);
+    } catch (e) {
+      console.error('Error saving theme preference', e);
+    }
+
+    if (showToast && window.Notifications) {
+      const labels = { dark: 'Dark Mode', light: 'Light Mode', eyecare: 'Eye Protection Warm Mode' };
+      Notifications.toast(`Theme set to ${labels[selected]}`, 'success');
+    }
+  }
+
+  toggleEyeCareTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'eyecare' ? 'dark' : 'eyecare';
+    this.setTheme(next, true);
   }
 
   initSplashScreen() {
@@ -28,17 +79,13 @@ class AppController {
       const splash = document.getElementById('edunexus-splash-screen');
       if (splash) {
         splash.classList.add('fade-out');
-        setTimeout(() => splash.remove(), 600);
+        setTimeout(() => {
+          if (splash && splash.parentNode) {
+            splash.parentNode.removeChild(splash);
+          }
+        }, 500);
       }
     }, 750);
-  }
-
-  toggleSidebar() {
-    const sidebar = document.getElementById('sidebar-container');
-    if (sidebar) {
-      sidebar.classList.toggle('collapsed');
-      sidebar.classList.toggle('mobile-open');
-    }
   }
 
   toggleProfileDropdown() {
@@ -57,14 +104,12 @@ class AppController {
 
   bindEventListeners() {
     window.addEventListener('keydown', (e) => {
-      // ESC key closes active modal & dropdown
       if (e.key === 'Escape') {
-        Notifications.closeModal();
+        if (window.Notifications) Notifications.closeModal();
         this.closeProfileDropdown();
       }
     });
 
-    // Dismiss dropdown on outside click
     document.addEventListener('click', (e) => {
       const dropdown = document.getElementById('header-profile-dropdown');
       const profileBtn = e.target.closest('.header-actions');

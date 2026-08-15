@@ -30,17 +30,14 @@
   <!-- SPA AUTHENTICATION VIEW WRAPPER -->
   <div id="auth-view-wrapper" style="display: block;"></div>
 
-  <!-- SPA APPLICATION SHELL (SIDEBAR & HEADER) -->
+  <!-- SPA APPLICATION SHELL (PERMANENT FIXED SIDEBAR & HEADER) -->
   <div id="app-shell" class="app-container" style="display: none;">
-    <!-- COLLAPSIBLE SIDEBAR WITH PERMANENT FOOTER -->
+    <!-- PERMANENT FIXED SIDEBAR WITH USER FOOTER -->
     <aside id="sidebar-container" class="app-sidebar">
       <div class="sidebar-header">
         <a class="sidebar-brand magnetic-target" onclick="Router.navigate('/student')" title="EduNexus">
           <img src="assets/logo.png" alt="EduNexus — Personalized Learning Platform" class="edunexus-logo-img sidebar-logo-img">
         </a>
-        <button class="sidebar-toggle-btn" onclick="App.toggleSidebar()" title="Toggle Navigation">
-          ⋮
-        </button>
       </div>
 
       <!-- Navigation Links Scrollable Area -->
@@ -61,20 +58,20 @@
 
     <!-- MAIN DASHBOARD CONTENT AREA -->
     <main class="app-main">
-      <!-- Top Sticky App Header -->
+      <!-- Top Sticky App Header with Utility Controls -->
       <header class="app-header">
-        <div class="header-welcome">
-          <h2 id="header-welcome-text">Good morning, <strong>Student</strong> 👋</h2>
-        </div>
-
-        <!-- Header Actions with Profile Dropdown -->
+        <!-- Header Utility Actions (Eye Care, Notifications, Profile) -->
         <div class="header-actions">
-          <button class="btn btn-secondary btn-sm" onclick="Notifications.toast('You have no unread notifications.', 'info')">
+          <button class="btn btn-secondary btn-sm" onclick="App.toggleEyeCareTheme()" title="Toggle Eye Protection Mode">
+            👁 <span style="font-size:0.75rem; font-weight:700;">Eye Care</span>
+          </button>
+
+          <button class="btn btn-secondary btn-sm" onclick="Notifications.toast('You have no unread notifications.', 'info')" title="Notifications">
             🔔 <span class="badge badge-cyan" style="padding: 0.1rem 0.4rem;">0</span>
           </button>
           
           <div style="position: relative;">
-            <button class="btn btn-outline btn-sm" onclick="App.toggleProfileDropdown()">
+            <button class="btn btn-outline btn-sm" onclick="App.toggleProfileDropdown()" title="Profile Account Menu">
               👤 Profile ▼
             </button>
             <div id="header-profile-dropdown" class="header-profile-dropdown">
@@ -114,9 +111,11 @@
   <script src="js/ai-engine.js"></script>
   <script src="js/quiz.js"></script>
   <script src="js/learning-path.js"></script>
+  <script src="js/mindful-break.js"></script>
   <script src="js/student.js"></script>
   <script src="js/teacher.js"></script>
   <script src="js/admin.js"></script>
+  <script src="js/subject.js"></script>
   <script src="js/notifications.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/router.js"></script>
