@@ -1444,70 +1444,40 @@ class RouterEngine {
           </div>
         </div>
 
-        <!-- 3. LEGAL & INFORMATION SECTION -->
-        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
-          <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">
+        <!-- 3. LEGAL & INFORMATION SECTION (COMPACT & MINIMAL) -->
+        <div style="border-top:1px solid var(--border-color); padding-top:1.5rem; margin-top:2.5rem;">
+          <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin-bottom:0.85rem; text-align:center;">
             LEGAL & INFORMATION
-          </h3>
-          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">
-            Platform terms, AI disclaimers, and project information.
-          </p>
-
-          <div style="display:flex; flex-direction:column; gap:0.65rem;">
-            <!-- Terms & Conditions Row -->
-            <div class="card" style="background:var(--bg-tertiary); padding:0.85rem 1.15rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:transform 0.2s ease, border-color 0.2s ease; border:1px solid var(--border-color);" onclick="Router.navigate('/terms')">
-              <div style="display:flex; align-items:center; gap:0.85rem;">
-                <span style="font-size:1.4rem;">📄</span>
-                <div>
-                  <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">Terms & Conditions</div>
-                  <div style="font-size:0.775rem; color:var(--text-muted);">Platform usage guidelines and academic responsibilities</div>
-                </div>
-              </div>
-              <span style="font-size:1.2rem; color:var(--text-muted);">→</span>
-            </div>
-
-            <!-- Disclaimer Row -->
-            <div class="card" style="background:var(--bg-tertiary); padding:0.85rem 1.15rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:transform 0.2s ease, border-color 0.2s ease; border:1px solid var(--border-color);" onclick="Router.navigate('/disclaimer')">
-              <div style="display:flex; align-items:center; gap:0.85rem;">
-                <span style="font-size:1.4rem;">⚠️</span>
-                <div>
-                  <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">Disclaimer</div>
-                  <div style="font-size:0.775rem; color:var(--text-muted);">Important guidance on AI-generated recommendations and questions</div>
-                </div>
-              </div>
-              <span style="font-size:1.2rem; color:var(--text-muted);">→</span>
-            </div>
-
-            <!-- About EduNexus Row -->
-            <div class="card" style="background:var(--bg-tertiary); padding:0.85rem 1.15rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:transform 0.2s ease, border-color 0.2s ease; border:1px solid var(--border-color);" onclick="Router.navigate('/about')">
-              <div style="display:flex; align-items:center; gap:0.85rem;">
-                <span style="font-size:1.4rem;">ℹ️</span>
-                <div>
-                  <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">About EduNexus</div>
-                  <div style="font-size:0.775rem; color:var(--text-muted);">Platform vision and project overview</div>
-                </div>
-              </div>
-              <span style="font-size:1.2rem; color:var(--text-muted);">→</span>
-            </div>
-
-            <!-- Open Source Licenses Row -->
-            <div class="card" style="background:var(--bg-tertiary); padding:0.85rem 1.15rem; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:transform 0.2s ease, border-color 0.2s ease; border:1px solid var(--border-color);" onclick="Router.navigate('/licenses')">
-              <div style="display:flex; align-items:center; gap:0.85rem;">
-                <span style="font-size:1.4rem;">📜</span>
-                <div>
-                  <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">Open-Source & Third-Party Licenses</div>
-                  <div style="font-size:0.775rem; color:var(--text-muted);">Attributions for fonts, icons, and libraries</div>
-                </div>
-              </div>
-              <span style="font-size:1.2rem; color:var(--text-muted);">→</span>
-            </div>
           </div>
-        </div>
 
-        <!-- FOOTER INFO AT BOTTOM OF SETTINGS -->
-        <div style="text-align:center; padding:1.5rem 0 1rem 0; border-top:1px solid var(--border-color); color:var(--text-muted); font-size:0.8rem;">
-          <div style="font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">EduNexus</div>
-          <div style="font-size:0.75rem;">© 2026 EduNexus. All rights reserved.</div>
+          <div style="display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:0.6rem 1.15rem; font-size:0.85rem; margin-bottom:1.15rem;">
+            <a onclick="Router.navigate('/terms')" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; color:var(--text-secondary); transition:color 0.15s ease;" onmouseover="this.style.color='var(--accent-cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
+              <span style="font-size:0.9rem;">📄</span> <span style="font-weight:600;">Terms & Conditions</span>
+            </a>
+
+            <span style="color:var(--border-color); font-size:0.8rem; user-select:none;">|</span>
+
+            <a onclick="Router.navigate('/disclaimer')" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; color:var(--text-secondary); transition:color 0.15s ease;" onmouseover="this.style.color='var(--accent-cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
+              <span style="font-size:0.9rem;">⚠️</span> <span style="font-weight:600;">Disclaimer</span>
+            </a>
+
+            <span style="color:var(--border-color); font-size:0.8rem; user-select:none;">|</span>
+
+            <a onclick="Router.navigate('/about')" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; color:var(--text-secondary); transition:color 0.15s ease;" onmouseover="this.style.color='var(--accent-cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
+              <span style="font-size:0.9rem;">ℹ️</span> <span style="font-weight:600;">About EduNexus</span>
+            </a>
+
+            <span style="color:var(--border-color); font-size:0.8rem; user-select:none;">|</span>
+
+            <a onclick="Router.navigate('/licenses')" style="cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; color:var(--text-secondary); transition:color 0.15s ease;" onmouseover="this.style.color='var(--accent-cyan)'" onmouseout="this.style.color='var(--text-secondary)'">
+              <span style="font-size:0.9rem;">📜</span> <span style="font-weight:600;">Open-Source Licenses</span>
+            </a>
+          </div>
+
+          <!-- COPYRIGHT (FINAL ELEMENT AT BOTTOM OF SETTINGS PAGE) -->
+          <div style="text-align:center; font-size:0.775rem; color:var(--text-muted); margin-top:0.5rem;">
+            © 2026 EduNexus. All rights reserved.
+          </div>
         </div>
       </div>
     `;
