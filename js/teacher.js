@@ -103,20 +103,15 @@ class TeacherModuleController {
 
   getStudentStats() {
     const defaultRoster = [
-      { id: 'STU-1009', name: 'Kavya Sharma', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 94, learningProgress: 100, weakTopicName: 'None', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #8B5CF6, #6366F1)' },
-      { id: 'STU-1007', name: 'Neha Kumari', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 91, learningProgress: 100, weakTopicName: 'None', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #10B981, #059669)' },
+      { id: 'STU-1011', name: 'Kanchan', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 96, learningProgress: 98, weakTopicName: 'None', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #EC4899, #8B5CF6)' },
       { id: 'STU-1008', name: 'Arjun Yadav', branch: 'Computer Science', section: 'Sec-B', avgAccuracy: 88, learningProgress: 100, weakTopicName: 'None', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #F59E0B, #D97706)' },
-      { id: 'STU-1010', name: 'Aditya Verma', branch: 'Computer Science', section: 'Sec-B', avgAccuracy: 86, learningProgress: 100, weakTopicName: 'None', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #EC4899, #DB2777)' },
-      { id: 'STU-1005', name: 'Ananya Singh', branch: 'Computer Science', section: 'Sec-B', avgAccuracy: 75, learningProgress: 50, weakTopicName: 'None', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #6366F1, #3B82F6)' },
-      { id: 'ECB0246', name: 'Rohan Sharma', branch: 'Computer Science', section: '10-A', avgAccuracy: 72, learningProgress: 65, weakTopicName: 'Binary Search Trees', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #EF4444, #DC2626)' },
-      { id: 'ECB0247', name: 'Priya Patel', branch: 'Computer Science', section: '10-B', avgAccuracy: 72, learningProgress: 65, weakTopicName: 'Binary Search Trees', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #10B981, #047857)' },
-      { id: 'DEM00245', name: 'TILLU', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 72, learningProgress: 65, weakTopicName: 'Binary Search Trees', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' },
-      { id: '843285', name: 'ASHISH', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 72, learningProgress: 65, weakTopicName: 'Binary Search Trees', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' },
-      { id: 'STU-1004', name: 'Aarav Sharma', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 72, learningProgress: 50, weakTopicName: 'Binary Search Trees', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #10B981, #059669)' },
-      { id: 'STU-1006', name: 'Rohan Gupta', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 69, learningProgress: 0, weakTopicName: 'Binary Search Trees', riskStatus: 'MEDIUM', avatarBg: 'linear-gradient(135deg, #F59E0B, #B45309)' },
-      { id: 'ECB0245', name: 'Rahul Meena', branch: 'Computer Science', section: '10-A', avgAccuracy: 60, learningProgress: 38, weakTopicName: 'Binary Search Trees', riskStatus: 'MEDIUM', avatarBg: 'linear-gradient(135deg, #3B82F6, #2563EB)' },
-      { id: '0245', name: 'Rahul Meena', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 58, learningProgress: 33, weakTopicName: 'DBMS Normalization', riskStatus: 'MEDIUM', avatarBg: 'linear-gradient(135deg, #8B5CF6, #6D28D9)' },
-      { id: 'STU-1002', name: 'Priya Verma', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 58, learningProgress: 33, weakTopicName: 'DBMS Normalization', riskStatus: 'MEDIUM', avatarBg: 'linear-gradient(135deg, #10B981, #047857)' }
+      { id: 'STU-1010', name: 'Aditya Verma', branch: 'Computer Science', section: 'Sec-B', avgAccuracy: 86, learningProgress: 100, weakTopicName: 'None', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #3B82F6, #1D4ED8)' },
+      { id: '843285', name: 'ASHISH', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 78, learningProgress: 80, weakTopicName: 'None', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #3B82F6, #6366F1)' },
+      { id: 'ECB0246', name: 'Rohan Sharma', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 72, learningProgress: 65, weakTopicName: 'Binary Search Trees', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #EF4444, #DC2626)' },
+      { id: 'DEM00245', name: 'TILLU', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 70, learningProgress: 60, weakTopicName: 'Binary Search Trees', riskStatus: 'LOW', avatarBg: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' },
+      { id: 'STU-1004', name: 'Aarav Sharma', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 65, learningProgress: 50, weakTopicName: 'Binary Search Trees', riskStatus: 'MEDIUM', avatarBg: 'linear-gradient(135deg, #10B981, #059669)' },
+      { id: 'ECB0245', name: 'Rahul Meena', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 60, learningProgress: 38, weakTopicName: 'DBMS Normalization', riskStatus: 'MEDIUM', avatarBg: 'linear-gradient(135deg, #3B82F6, #2563EB)' },
+      { id: 'STU-1006', name: 'Rohan Gupta', branch: 'Computer Science', section: 'Sec-A', avgAccuracy: 48, learningProgress: 25, weakTopicName: 'Recursion & Dynamic Programming', riskStatus: 'HIGH', avatarBg: 'linear-gradient(135deg, #F59E0B, #B45309)' }
     ];
 
     const users = Storage.getUsers().filter(u => !u.role || u.role.toLowerCase() === 'student');
@@ -203,10 +198,12 @@ class TeacherModuleController {
           </div>
 
           <!-- TEACHER PROFILE PILL -->
-          <div class="teacher-header-widget" style="cursor:pointer;" onclick="TeacherModule.navigate('settings')">
-            <div style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, #3B82F6, #6366F1); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:0.8rem;">
-              T
-            </div>
+          <div class="teacher-header-widget" style="cursor:pointer;" onclick="Auth.openProfileModal(false)" title="Click to view Teacher Profile">
+            ${user.avatarUrl ? `<img src="${user.avatarUrl}" alt="${teacherName}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" />` : `
+              <div style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, #3B82F6, #6366F1); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:0.8rem;">
+                ${teacherName.substring(0, 2).toUpperCase()}
+              </div>
+            `}
             <span style="font-weight:700; color:var(--text-primary);">${teacherName}</span>
             <span style="font-size:0.75rem; color:var(--text-muted);">▼</span>
           </div>
@@ -660,9 +657,9 @@ class TeacherModuleController {
     if (!container) return;
 
     const topics = [
-      { name: 'Binary Search Trees', subject: 'Data Structures', affected: 8, avgAcc: 42, priority: 'HIGH', students: ['Rohan Sharma', 'Priya Patel', 'TILLU', 'ASHISH', 'Aarav Sharma'] },
-      { name: 'DBMS Normalization', subject: 'Database Management', affected: 5, avgAcc: 58, priority: 'MEDIUM', students: ['Rahul Meena', 'Priya Verma'] },
-      { name: 'Recursion & Dynamic Programming', subject: 'Algorithms', affected: 4, avgAcc: 52, priority: 'HIGH', students: ['Rohan Gupta', 'Sneha Kapoor'] }
+      { name: 'Binary Search Trees', subject: 'Data Structures', affected: 4, avgAcc: 42, priority: 'HIGH', students: ['Rohan Sharma', 'TILLU', 'ASHISH', 'Aarav Sharma'] },
+      { name: 'DBMS Normalization', subject: 'Database Management', affected: 2, avgAcc: 58, priority: 'MEDIUM', students: ['Rahul Meena', 'Rohan Gupta'] },
+      { name: 'Recursion & Dynamic Programming', subject: 'Algorithms', affected: 3, avgAcc: 48, priority: 'HIGH', students: ['Rohan Gupta', 'Aarav Sharma', 'TILLU'] }
     ];
 
     container.innerHTML = `

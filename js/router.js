@@ -230,7 +230,6 @@ class RouterEngine {
   }
 
   updateProfileElements(user) {
-    if (!user && window.Auth) user = Auth.getCurrentUser();
     if (!user) return;
 
     const avatar = document.getElementById('sidebar-user-avatar');
@@ -240,13 +239,24 @@ class RouterEngine {
 
     const roleName = user.role ? (user.role.toLowerCase() === 'admin' ? 'ADMINISTRATOR' : user.role.toUpperCase()) : 'STUDENT';
 
-    if (avatar) avatar.textContent = this.getInitials(user.name);
+    if (avatar) {
+      if (user.avatarUrl) {
+        avatar.innerHTML = `<img src="${user.avatarUrl}" alt="${user.name}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;" />`;
+      } else {
+        avatar.textContent = this.getInitials(user.name);
+      }
+    }
     if (userName) userName.textContent = user.name || user.id || 'User';
     if (userRole) userRole.textContent = roleName;
     if (headerUserName) headerUserName.textContent = user.name || 'Profile';
 
+    // Re-render active dashboard top headers if needed
     if (this.currentRoute === '/student' && window.StudentDashboard) {
       StudentDashboard.render();
+    } else if (this.currentRoute.startsWith('/teacher') && window.TeacherModule) {
+      TeacherModule.navigate(TeacherModule.currentSection);
+    } else if (this.currentRoute.startsWith('/admin') && window.AdminView) {
+      AdminView.navigate(AdminView.currentSection);
     }
   }
 

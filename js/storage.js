@@ -107,6 +107,25 @@ const DEFAULT_DEMO_DATA = {
       mindfulXP: 20
     },
     {
+      id: 'STU-1011',
+      name: 'Kanchan',
+      role: 'student',
+      password: 'student123',
+      email: 'kanchan@edunexus.edu',
+      mobileNumber: '+91 9876543221',
+      schoolCode: 'ECB',
+      institution: 'Engineering College Bikaner',
+      rollNumber: '1011',
+      branch: 'Computer Science',
+      year: 'Undergraduate',
+      semester: 'Semester 3',
+      classId: 'Sec-A',
+      streakDays: 12,
+      achievements: ['first_quiz', 'streak_5', 'topic_master', 'mindful_learner'],
+      mindfulHistory: [],
+      mindfulXP: 100
+    },
+    {
       id: 'STU-1004',
       name: 'Aarav Sharma',
       role: 'student',
@@ -124,25 +143,6 @@ const DEFAULT_DEMO_DATA = {
       achievements: ['first_quiz', 'streak_5'],
       mindfulHistory: [],
       mindfulXP: 40
-    },
-    {
-      id: 'STU-1005',
-      name: 'Ananya Singh',
-      role: 'student',
-      password: 'student123',
-      email: 'ananya.singh@edunexus.edu',
-      mobileNumber: '+91 9876543215',
-      schoolCode: 'ECB',
-      institution: 'Engineering College Bikaner',
-      rollNumber: '1005',
-      branch: 'Computer Science',
-      year: 'Undergraduate',
-      semester: 'Semester 3',
-      classId: 'Sec-B',
-      streakDays: 4,
-      achievements: ['first_quiz'],
-      mindfulHistory: [],
-      mindfulXP: 20
     },
     {
       id: 'STU-1006',
@@ -164,25 +164,6 @@ const DEFAULT_DEMO_DATA = {
       mindfulXP: 40
     },
     {
-      id: 'STU-1007',
-      name: 'Neha Kumari',
-      role: 'student',
-      password: 'student123',
-      email: 'neha.kumari@edunexus.edu',
-      mobileNumber: '+91 9876543217',
-      schoolCode: 'ECB',
-      institution: 'Engineering College Bikaner',
-      rollNumber: '1007',
-      branch: 'Computer Science',
-      year: 'Undergraduate',
-      semester: 'Semester 3',
-      classId: 'Sec-A',
-      streakDays: 12,
-      achievements: ['first_quiz', 'streak_5', 'topic_master', 'mindful_learner'],
-      mindfulHistory: [],
-      mindfulXP: 100
-    },
-    {
       id: 'STU-1008',
       name: 'Arjun Yadav',
       role: 'student',
@@ -200,25 +181,6 @@ const DEFAULT_DEMO_DATA = {
       achievements: ['first_quiz', 'streak_5', 'topic_master'],
       mindfulHistory: [],
       mindfulXP: 80
-    },
-    {
-      id: 'STU-1009',
-      name: 'Kavya Sharma',
-      role: 'student',
-      password: 'student123',
-      email: 'kavya.sharma@edunexus.edu',
-      mobileNumber: '+91 9876543219',
-      schoolCode: 'ECB',
-      institution: 'Engineering College Bikaner',
-      rollNumber: '1009',
-      branch: 'Computer Science',
-      year: 'Undergraduate',
-      semester: 'Semester 3',
-      classId: 'Sec-A',
-      streakDays: 15,
-      achievements: ['first_quiz', 'streak_5', 'topic_master', 'mindful_learner'],
-      mindfulHistory: [],
-      mindfulXP: 120
     },
     {
       id: 'STU-1010',
@@ -997,6 +959,21 @@ class StorageManager {
       return u;
     }
     return null;
+  }
+
+  updateUser(updatedData) {
+    if (!updatedData || !updatedData.id) return null;
+    const db = this.getDb();
+    const idx = db.users.findIndex(u => u.id.toLowerCase() === updatedData.id.toLowerCase());
+    if (idx !== -1) {
+      db.users[idx] = { ...db.users[idx], ...updatedData };
+      this.saveDb(db);
+      return db.users[idx];
+    } else {
+      db.users.push(updatedData);
+      this.saveDb(db);
+      return updatedData;
+    }
   }
 }
 

@@ -50,14 +50,14 @@
       <nav id="sidebar-nav-items" class="sidebar-nav"></nav>
 
       <!-- PERMANENT SIDEBAR FOOTER USER SECTION -->
-      <div class="sidebar-footer">
-        <div id="sidebar-user-avatar" class="user-avatar" onclick="App.toggleProfileDropdown()">S</div>
+      <div class="sidebar-footer" onclick="Auth.openProfileModal(false)" style="cursor:pointer;" title="View Profile">
+        <div id="sidebar-user-avatar" class="user-avatar">S</div>
         <div class="user-info">
           <span id="sidebar-user-name" class="user-name">Demo Student</span>
           <span id="sidebar-user-role" class="user-role">STUDENT</span>
         </div>
-        <button onclick="Auth.confirmLogout()" class="btn btn-secondary btn-sm" style="margin-left: auto; padding: 0.35rem 0.55rem;" title="Logout">
-          🚪
+        <button onclick="event.stopPropagation(); Auth.openProfileModal(true);" class="btn btn-action-ghost btn-sm" style="margin-left: auto; padding: 0.35rem 0.55rem; font-size:0.85rem;" title="Edit Profile">
+          ✎
         </button>
       </div>
     </aside>

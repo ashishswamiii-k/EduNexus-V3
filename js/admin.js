@@ -182,10 +182,12 @@ class AdminViewController {
           </div>
 
           <!-- ADMIN PROFILE PILL -->
-          <div class="teacher-header-widget" style="cursor:pointer;" onclick="AdminView.navigate('settings')">
-            <div style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, #06B6D4, #3B82F6); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:0.8rem;">
-              ${initials}
-            </div>
+          <div class="teacher-header-widget" style="cursor:pointer;" onclick="Auth.openProfileModal(false)" title="Click to view Admin Profile">
+            ${user.avatarUrl ? `<img src="${user.avatarUrl}" alt="${userName}" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" />` : `
+              <div style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, #06B6D4, #3B82F6); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:0.8rem;">
+                ${initials}
+              </div>
+            `}
             <span style="font-weight:700; color:var(--text-primary);">${userName}</span>
             <span style="font-size:0.75rem; color:var(--text-muted);">▼</span>
           </div>
