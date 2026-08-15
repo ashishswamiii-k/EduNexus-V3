@@ -1389,63 +1389,78 @@ class RouterEngine {
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
 
     container.innerHTML = `
-      <div class="fade-in" style="max-width:800px; padding-top:0.5rem;">
-        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">
-          ACCOUNT SETTINGS
-        </h1>
+      <div class="fade-in" style="max-width:980px; width:100%; margin:0 auto; padding:0.5rem 0.5rem 2rem 0.5rem; box-sizing:border-box;">
+        
+        <!-- CENTERED SETTINGS HEADER -->
+        <div style="text-align:center; margin-bottom:2rem;">
+          <h1 style="font-size:1.6rem; font-weight:800; color:var(--text-primary); margin-bottom:0.25rem;">
+            SETTINGS
+          </h1>
+          <p style="font-size:0.875rem; color:var(--text-muted); margin:0;">
+            Manage your account preferences, visual appearance modes, and platform information
+          </p>
+        </div>
 
         <!-- 1. ACCOUNT & PROFILE -->
-        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
-          <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:1rem;">ACCOUNT & PROFILE</h3>
+        <div class="card card-gradient-border" style="margin-bottom:1.5rem; width:100%;">
+          <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:1rem;">
+            👤 ACCOUNT & PROFILE
+          </h3>
           <form onsubmit="event.preventDefault(); Router.saveProfileSettings();">
-            <div class="form-group">
-              <label class="form-label">Full Name</label>
+            <div class="form-group" style="margin-bottom:1.15rem;">
+              <label class="form-label" style="font-weight:600;">Full Name</label>
               <input type="text" id="setting-name" class="form-control" value="${user.name || ''}" required />
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-              <div class="form-group">
-                <label class="form-label">Email Address</label>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.15rem; margin-bottom:1.15rem;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-weight:600;">Email Address</label>
                 <input type="email" id="setting-email" class="form-control" value="${user.email || 'user@edunexus.edu'}" required />
               </div>
-              <div class="form-group">
-                <label class="form-label">Mobile Number</label>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-weight:600;">Mobile Number</label>
                 <input type="text" id="setting-mobile" class="form-control" value="${user.mobileNumber || '+91 9876543210'}" required />
               </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm" style="margin-top:0.5rem;">
-              Save Profile Changes
-            </button>
+            <div style="display:flex; justify-content:flex-end;">
+              <button type="submit" class="btn btn-primary btn-sm" style="padding:0.5rem 1.25rem;">
+                Save Profile Changes
+              </button>
+            </div>
           </form>
         </div>
 
-        <!-- 2. APPEARANCE & THEME MODES -->
-        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
-          <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">APPEARANCE & VISUAL MODES</h3>
-          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">Select your preferred visual mode for study sessions.</p>
+        <!-- 2. APPEARANCE & VISUAL MODES -->
+        <div class="card card-gradient-border" style="margin-bottom:2rem; width:100%;">
+          <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:0.35rem;">
+            🎨 APPEARANCE & VISUAL MODES
+          </h3>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">
+            Select your preferred visual mode for comfortable study sessions.
+          </p>
 
-          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem;">
-            <button class="card ${currentTheme === 'light' ? 'card-gradient-border' : ''}" style="text-align:center; padding:1.25rem 0.85rem; cursor:pointer; background:var(--bg-tertiary); border:${currentTheme === 'light' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)'};" onclick="App.setTheme('light'); Router.renderSettings();">
-              <div style="font-size:1.75rem; margin-bottom:0.35rem;">☀</div>
-              <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">Light Mode</div>
-              <div style="font-size:0.725rem; color:var(--text-muted); margin-top:0.2rem;">Clean & Bright</div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1.15rem;">
+            <button class="card ${currentTheme === 'light' ? 'card-gradient-border' : ''}" style="text-align:center; padding:1.35rem 1rem; cursor:pointer; background:var(--bg-tertiary); border:${currentTheme === 'light' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)'}; transition:transform 0.15s ease;" onclick="App.setTheme('light'); Router.renderSettings();">
+              <div style="font-size:1.85rem; margin-bottom:0.35rem;">☀</div>
+              <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">Light Mode</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Clean & Bright Interface</div>
             </button>
 
-            <button class="card ${currentTheme === 'dark' ? 'card-gradient-border' : ''}" style="text-align:center; padding:1.25rem 0.85rem; cursor:pointer; background:var(--bg-tertiary); border:${currentTheme === 'dark' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)'};" onclick="App.setTheme('dark'); Router.renderSettings();">
-              <div style="font-size:1.75rem; margin-bottom:0.35rem;">◐</div>
-              <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">Dark Mode</div>
-              <div style="font-size:0.725rem; color:var(--text-muted); margin-top:0.2rem;">Sleek Neon Contrast</div>
+            <button class="card ${currentTheme === 'dark' ? 'card-gradient-border' : ''}" style="text-align:center; padding:1.35rem 1rem; cursor:pointer; background:var(--bg-tertiary); border:${currentTheme === 'dark' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)'}; transition:transform 0.15s ease;" onclick="App.setTheme('dark'); Router.renderSettings();">
+              <div style="font-size:1.85rem; margin-bottom:0.35rem;">◐</div>
+              <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">Dark Mode</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Sleek Neon Contrast</div>
             </button>
 
-            <button class="card ${currentTheme === 'eyecare' ? 'card-gradient-border' : ''}" style="text-align:center; padding:1.25rem 0.85rem; cursor:pointer; background:var(--bg-tertiary); border:${currentTheme === 'eyecare' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)'};" onclick="App.setTheme('eyecare'); Router.renderSettings();">
-              <div style="font-size:1.75rem; margin-bottom:0.35rem;">👁</div>
-              <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary);">Eye Care</div>
-              <div style="font-size:0.725rem; color:var(--text-muted); margin-top:0.2rem;">Warm Academic Cream</div>
+            <button class="card ${currentTheme === 'eyecare' ? 'card-gradient-border' : ''}" style="text-align:center; padding:1.35rem 1rem; cursor:pointer; background:var(--bg-tertiary); border:${currentTheme === 'eyecare' ? '2px solid var(--accent-cyan)' : '1px solid var(--border-color)'}; transition:transform 0.15s ease;" onclick="App.setTheme('eyecare'); Router.renderSettings();">
+              <div style="font-size:1.85rem; margin-bottom:0.35rem;">👁</div>
+              <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary);">Eye Care</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">Warm Academic Cream</div>
             </button>
           </div>
         </div>
 
         <!-- 3. LEGAL & INFORMATION SECTION (COMPACT & MINIMAL) -->
-        <div style="border-top:1px solid var(--border-color); padding-top:1.5rem; margin-top:2.5rem;">
+        <div style="border-top:1px solid var(--border-color); padding-top:1.5rem; margin-top:2rem;">
           <div style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin-bottom:0.85rem; text-align:center;">
             LEGAL & INFORMATION
           </div>
