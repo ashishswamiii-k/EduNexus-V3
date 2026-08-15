@@ -135,22 +135,63 @@ class TeacherViewController {
 
   openStudentProfileModal(studentId) {
     const user = Storage.getUserById(studentId);
+    const nexa = window.AIEngine ? AIEngine.getNexaAIInsightForStudent(studentId) : null;
+    const riskBadgeClass = nexa ? (nexa.riskLevel === 'HIGH' ? 'badge-high' : nexa.riskLevel === 'MEDIUM' ? 'badge-medium' : 'badge-low') : 'badge-secondary';
+    const riskColor = nexa ? (nexa.riskLevel === 'HIGH' ? '#EF4444' : nexa.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981') : '#06B6D4';
+
     const body = `
       <div style="display: flex; flex-direction: column; gap: 1rem;">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <div class="user-avatar" style="width: 50px; height: 50px; font-size: 1.2rem;">${user ? user.name.charAt(0) : 'S'}</div>
-          <div>
-            <h4 style="font-weight: 700; font-size: 1.1rem;">${user ? user.name : 'Student'}</h4>
-            <p class="text-xs text-secondary">ID: ${studentId} • Course: ${user ? user.branch : 'Computer Science'}</p>
+        <div style="display: flex; align-items: center; justify-content:space-between; flex-wrap:wrap; gap: 1rem;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div class="user-avatar" style="width: 50px; height: 50px; font-size: 1.2rem;">${user ? user.name.charAt(0) : 'S'}</div>
+            <div>
+              <h4 style="font-weight: 700; font-size: 1.1rem; color:var(--text-primary);">${user ? user.name : 'Student'}</h4>
+              <p class="text-xs text-secondary">ID: ${studentId} • Course: ${user ? user.branch : 'Computer Science'}</p>
+            </div>
           </div>
+          ${nexa ? `<span class="badge ${riskBadgeClass}" style="font-size:0.8rem; font-weight:800;">${nexa.riskLevel} RISK</span>` : ''}
         </div>
-        <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
-          <h5 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem;">AI Diagnostic Breakdown</h5>
-          <p class="text-xs text-secondary">Prerequisite Gap: <strong>2NF Partial Dependency</strong> in DBMS Normalization.</p>
+
+        <!-- NEXAAI LEARNING INTELLIGENCE DIAGNOSTIC CARD -->
+        <div class="card card-gradient-border" style="padding: 1rem; background: var(--bg-tertiary); border-left:4px solid ${riskColor};">
+          <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.6rem;">
+            <span style="color:var(--accent-cyan);">✦</span>
+            <h5 style="font-size: 0.95rem; font-weight: 800; color:var(--text-primary); margin:0;">
+              NexaAI Learning Intelligence Breakdown
+            </h5>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.85rem; font-size:0.8rem;">
+            <div style="background:var(--bg-primary); padding:0.6rem 0.75rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+              <div style="color:var(--text-muted); font-size:0.7rem; font-weight:700; text-transform:uppercase;">Weak Topic</div>
+              <div style="font-weight:700; color:var(--text-primary); margin-top:0.15rem;">
+                ${nexa && nexa.weakTopic ? nexa.weakTopic.name : 'None Identified'}
+              </div>
+            </div>
+
+            <div style="background:var(--bg-primary); padding:0.6rem 0.75rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+              <div style="color:var(--text-muted); font-size:0.7rem; font-weight:700; text-transform:uppercase;">Prerequisite Gap</div>
+              <div style="font-weight:700; color:var(--text-primary); margin-top:0.15rem;">
+                ${nexa && nexa.prerequisiteGap ? nexa.prerequisiteGap.name : 'None Detected'}
+              </div>
+            </div>
+          </div>
+
+          <p class="text-xs text-secondary" style="line-height:1.5; margin-bottom:0.75rem;">
+            ${nexa ? nexa.explanation : 'No active prerequisite diagnostic alerts.'}
+          </p>
+
+          <div style="font-size:0.8rem; font-weight:700; color:var(--text-primary); margin-bottom:0.85rem;">
+            Suggested Intervention: <span style="color:var(--accent-cyan);">${nexa ? nexa.recommendedAction : 'Regular course progress'}</span>
+          </div>
+
+          <button class="btn btn-primary btn-sm w-full" onclick="Notifications.closeModal(); TeacherView.openCreateInterventionModal('${studentId}');">
+            ⚡ Create Early Intervention →
+          </button>
         </div>
       </div>
     `;
-    Notifications.openModal('Student Profile & AI Diagnostic', body, `<button class="btn btn-secondary" onclick="Notifications.closeModal()">Close</button>`);
+    Notifications.openModal('Student Profile & NexaAI Diagnostic', body, `<button class="btn btn-secondary" onclick="Notifications.closeModal()">Close</button>`);
   }
 
   openCreateInterventionModal(studentId = 'ECB0245') {

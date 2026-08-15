@@ -122,24 +122,40 @@ class LearningPathEngine {
           `).join('')}
         </div>
 
-        <!-- AI RECOMMENDATION BANNER -->
-        <div class="card card-gradient-border" style="margin-bottom:1.5rem; border-left:4px solid ${data.weakTopics.length > 0 ? '#F59E0B' : 'var(--accent-cyan)'};">
-          <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
-            <div style="flex:1;">
-              <div style="font-size:0.8rem; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; color:${data.weakTopics.length > 0 ? '#FBBF24' : 'var(--accent-cyan)'}; margin-bottom:0.25rem;">
-                ✦ AI Personal Learning Recommendation
+        <!-- NEXAAI LEARNING INTELLIGENCE SUMMARY BANNER -->
+        ${(() => {
+          const nexa = window.AIEngine ? AIEngine.getNexaAIInsightForStudent(data.studentId) : null;
+          const riskColor = nexa ? (nexa.riskLevel === 'HIGH' ? '#EF4444' : nexa.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981') : 'var(--accent-cyan)';
+          const riskBadge = nexa ? (nexa.riskLevel === 'HIGH' ? 'badge-high' : nexa.riskLevel === 'MEDIUM' ? 'badge-medium' : 'badge-low') : 'badge-cyan';
+          return `
+            <div class="card card-gradient-border" style="margin-bottom:1.5rem; border-left:4px solid ${riskColor}; background:var(--bg-secondary);">
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+                <div style="flex:1;">
+                  <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+                    <span style="color:var(--accent-cyan); font-size:1.1rem;">✦</span>
+                    <strong style="font-size:0.95rem; font-weight:800; color:var(--text-primary);">NexaAI Learning Intelligence</strong>
+                    ${nexa ? `<span class="badge ${riskBadge}" style="font-size:0.725rem;">${nexa.riskLevel} RISK</span>` : ''}
+                  </div>
+                  <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.55; margin:0 0 0.5rem 0;">
+                    ${nexa ? nexa.explanation : data.recommendation}
+                  </p>
+                  <div style="font-size:0.8rem; font-weight:700; color:var(--text-primary);">
+                    🎯 Next Action: <span style="color:var(--accent-cyan);">${nexa ? nexa.recommendedAction : 'Complete current focus topic'}</span>
+                  </div>
+                </div>
+                ${nexa ? `
+                  <button class="btn btn-primary btn-sm" onclick="Quiz.executeNexaAction('${nexa.actionType}', '${nexa.targetTopicId}')">
+                    ${nexa.actionButtonText} →
+                  </button>
+                ` : (data.currentTopic ? `
+                  <button class="btn btn-primary btn-sm" onclick="Quiz.startQuiz('${data.currentTopic.id}'); Router.navigate('/quiz');">
+                    🎯 Practice Topic Quiz
+                  </button>
+                ` : '')}
               </div>
-              <p style="font-size:0.925rem; font-weight:600; color:var(--text-primary); margin:0;">
-                "${data.recommendation}"
-              </p>
             </div>
-            ${data.currentTopic ? `
-              <button class="btn btn-primary btn-sm" onclick="Quiz.startQuiz('${data.currentTopic.id}'); Router.navigate('/quiz');">
-                🎯 Practice Topic Quiz
-              </button>
-            ` : ''}
-          </div>
-        </div>
+          `;
+        })()}
 
         <!-- SUBJECT STUDY ROADMAP SEQUENCE -->
         <div class="card" style="margin-bottom:1.5rem;">

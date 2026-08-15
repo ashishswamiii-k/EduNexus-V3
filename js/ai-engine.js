@@ -133,6 +133,177 @@ class AIEngines {
       }
     ];
   }
+
+  /**
+   * NexaAI — EduNexus Learning Intelligence Analytical Engine
+   * Generates dynamic contextual insight from quiz score, topic accuracy, prerequisite mappings, and risk level.
+   */
+  getNexaAIInsight(quizResult) {
+    if (!quizResult) return null;
+
+    const studentId = quizResult.studentId || (window.Auth && Auth.getCurrentUser() ? Auth.getCurrentUser().id : 'ECB0245');
+    const topicId = quizResult.topicId;
+    const score = typeof quizResult.score === 'number' ? quizResult.score : 0;
+
+    const topics = Storage.getTopics();
+    const subjects = Storage.getSubjects();
+    const performance = Storage.getPerformance(studentId);
+
+    const currentTopic = topics.find(t => t.id === topicId) || {
+      id: topicId,
+      name: quizResult.topicName || 'Current Topic',
+      prerequisiteId: null
+    };
+
+    const subject = subjects.find(s => s.id === currentTopic.subjectId) || { name: 'Engineering Subject' };
+
+    // 1. Weak Topic Detection
+    let weakTopic = null;
+    if (score < 75) {
+      weakTopic = currentTopic;
+    } else {
+      const weakPerf = performance.find(p => p.status === 'Needs Focus' || p.accuracy < 75);
+      if (weakPerf) {
+        weakTopic = topics.find(t => t.id === weakPerf.topicId) || { id: weakPerf.topicId, name: weakPerf.topicName };
+      }
+    }
+
+    // 2. Prerequisite Gap Detection
+    let prerequisiteGap = null;
+    let prereqPerf = null;
+    const targetTopicForPrereq = weakTopic || currentTopic;
+
+    if (targetTopicForPrereq && targetTopicForPrereq.prerequisiteId) {
+      prerequisiteGap = topics.find(t => t.id === targetTopicForPrereq.prerequisiteId) || null;
+      if (prerequisiteGap) {
+        prereqPerf = performance.find(p => p.topicId === prerequisiteGap.id) || null;
+      }
+    }
+
+    // 3. Risk Assessment
+    let riskLevel = 'LOW';
+    if (score < 50) {
+      riskLevel = 'HIGH';
+    } else if (score < 75) {
+      riskLevel = 'MEDIUM';
+    } else {
+      riskLevel = 'LOW';
+    }
+
+    // 4. Contextual Reasoning & Explanation Formulation
+    let explanation = '';
+    let recommendedAction = '';
+    let actionType = 'CONTINUE_LEARNING';
+    let actionButtonText = 'Continue Learning';
+    let targetTopicId = currentTopic.id;
+
+    if (score < 50) {
+      actionType = 'TARGETED_REVISION';
+      actionButtonText = 'Start Targeted Revision';
+      if (prerequisiteGap) {
+        explanation = `Your recent evaluation score of ${score}% in "${currentTopic.name}" indicates significant learning difficulty. The configured foundational prerequisite is "${prerequisiteGap.name}"${prereqPerf ? ` (your accuracy: ${prereqPerf.accuracy}%)` : ''}. Rebuilding this prerequisite concept will resolve underlying gaps.`;
+        recommendedAction = `Review "${prerequisiteGap.name}" before continuing with "${currentTopic.name}".`;
+        targetTopicId = prerequisiteGap.id;
+      } else {
+        explanation = `Your evaluation score of ${score}% in "${currentTopic.name}" shows critical concept gaps. Intensive targeted revision of core principles and problem sets is recommended immediately.`;
+        recommendedAction = `Complete focused revision and practice sets for "${currentTopic.name}".`;
+        targetTopicId = currentTopic.id;
+      }
+    } else if (score < 75) {
+      actionType = 'REVIEW_PREREQUISITE';
+      actionButtonText = 'Review Prerequisite';
+      if (prerequisiteGap) {
+        explanation = `Your performance of ${score}% indicates moderate difficulty with "${currentTopic.name}". Reviewing the prerequisite concept "${prerequisiteGap.name}" will reinforce your structural understanding for full topic mastery.`;
+        recommendedAction = `Review "${prerequisiteGap.name}" before re-attempting "${currentTopic.name}".`;
+        targetTopicId = prerequisiteGap.id;
+      } else {
+        explanation = `Your performance of ${score}% in "${currentTopic.name}" reflects partial concept retention. Reviewing the topic notes and practice questions will help reach full topic mastery.`;
+        recommendedAction = `Review key formulas and practice 5 additional questions on "${currentTopic.name}".`;
+        targetTopicId = currentTopic.id;
+      }
+    } else {
+      actionType = 'CONTINUE_LEARNING';
+      actionButtonText = 'Continue Learning';
+      explanation = `Great job! Your score of ${score}% demonstrates strong concept mastery for "${currentTopic.name}". No significant prerequisite gaps were detected.`;
+      recommendedAction = `Proceed to the next topic in your personalized learning roadmap.`;
+
+      const nextTopic = topics.find(t => t.subjectId === currentTopic.subjectId && t.id !== currentTopic.id && t.prerequisiteId === currentTopic.id);
+      if (nextTopic) {
+        targetTopicId = nextTopic.id;
+      }
+    }
+
+    return {
+      topicId: currentTopic.id,
+      topicName: currentTopic.name,
+      subjectName: subject.name,
+      score,
+      weakTopic: weakTopic ? { id: weakTopic.id, name: weakTopic.name } : null,
+      prerequisiteGap: prerequisiteGap ? {
+        id: prerequisiteGap.id,
+        name: prerequisiteGap.name,
+        accuracy: prereqPerf ? prereqPerf.accuracy : null
+      } : null,
+      riskLevel,
+      explanation,
+      recommendedAction,
+      actionType,
+      actionButtonText,
+      targetTopicId,
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * NexaAI Insight for Teacher & Student Overview Pages
+   */
+  getNexaAIInsightForStudent(studentId = 'ECB0245') {
+    const history = Storage.getQuizHistory(studentId);
+    const performance = Storage.getPerformance(studentId);
+    const topics = Storage.getTopics();
+
+    const lastQuiz = history.length > 0 ? history[history.length - 1] : null;
+    if (lastQuiz) {
+      return this.getNexaAIInsight(lastQuiz);
+    }
+
+    const weakPerf = performance.find(p => p.status === 'Needs Focus' || p.accuracy < 75);
+    if (weakPerf) {
+      const topicObj = topics.find(t => t.id === weakPerf.topicId);
+      const prereqObj = topicObj && topicObj.prerequisiteId ? topics.find(t => t.id === topicObj.prerequisiteId) : null;
+      const riskLevel = weakPerf.accuracy < 50 ? 'HIGH' : 'MEDIUM';
+
+      return {
+        topicId: weakPerf.topicId,
+        topicName: weakPerf.topicName,
+        score: weakPerf.accuracy,
+        weakTopic: { id: weakPerf.topicId, name: weakPerf.topicName },
+        prerequisiteGap: prereqObj ? { id: prereqObj.id, name: prereqObj.name } : null,
+        riskLevel,
+        explanation: `Student shows an accuracy of ${weakPerf.accuracy}% in ${weakPerf.topicName}.${prereqObj ? ` The configured prerequisite gap is ${prereqObj.name}.` : ''}`,
+        recommendedAction: prereqObj ? `Assign targeted prerequisite revision on ${prereqObj.name}.` : `Assign practice set on ${weakPerf.topicName}.`,
+        actionType: riskLevel === 'HIGH' ? 'TARGETED_REVISION' : 'REVIEW_PREREQUISITE',
+        actionButtonText: riskLevel === 'HIGH' ? 'Start Targeted Revision' : 'Review Prerequisite',
+        targetTopicId: prereqObj ? prereqObj.id : weakPerf.topicId,
+        timestamp: new Date().toISOString()
+      };
+    }
+
+    return {
+      topicId: 'TOP_DBMS_NORM',
+      topicName: 'DBMS Normalization (1NF, 2NF, 3NF, BCNF)',
+      score: 85,
+      weakTopic: null,
+      prerequisiteGap: null,
+      riskLevel: 'LOW',
+      explanation: 'Student maintains strong overall accuracy across course topics with no critical prerequisite gaps.',
+      recommendedAction: 'Continue regular learning path sequence.',
+      actionType: 'CONTINUE_LEARNING',
+      actionButtonText: 'Continue Learning',
+      targetTopicId: 'TOP_DBMS_NORM',
+      timestamp: new Date().toISOString()
+    };
+  }
 }
 
 const AIEngine = new AIEngines();

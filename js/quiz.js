@@ -406,6 +406,37 @@ class QuizEngine {
     this.updateTimerDisplay();
   }
 
+  executeNexaAction(actionType, targetTopicId) {
+    if (actionType === 'TARGETED_REVISION' || actionType === 'REVIEW_PREREQUISITE') {
+      if (targetTopicId) {
+        const questions = Storage.getQuestionsByTopic(targetTopicId);
+        if (questions && questions.length > 0) {
+          const started = this.startQuiz(targetTopicId);
+          if (started && window.Router) {
+            Router.renderQuiz();
+            if (window.Notifications) {
+              Notifications.toast(`✦ NexaAI: Initiating targeted revision quiz on prerequisite...`, 'info', 4000);
+            }
+            return;
+          }
+        }
+      }
+      if (window.Router) {
+        Router.navigate('/learning-path');
+        if (window.Notifications) {
+          Notifications.toast('✦ NexaAI: Directing to your Personalized Learning Path...', 'info', 4000);
+        }
+      }
+    } else {
+      if (window.Router) {
+        Router.navigate('/learning-path');
+        if (window.Notifications) {
+          Notifications.toast('✦ NexaAI: Proceeding with recommended learning sequence...', 'success', 3500);
+        }
+      }
+    }
+  }
+
   renderResults(res = this.lastResult, containerId = 'page-body-container') {
     const container = document.getElementById(containerId);
     if (!container || !res) {
@@ -413,9 +444,15 @@ class QuizEngine {
       return;
     }
 
+    const nexa = window.AIEngine ? AIEngine.getNexaAIInsight(res) : null;
+    const riskBadgeClass = nexa ? (nexa.riskLevel === 'HIGH' ? 'badge-high' : nexa.riskLevel === 'MEDIUM' ? 'badge-medium' : 'badge-low') : 'badge-secondary';
+    const riskColor = nexa ? (nexa.riskLevel === 'HIGH' ? '#EF4444' : nexa.riskLevel === 'MEDIUM' ? '#F59E0B' : '#10B981') : '#06B6D4';
+
     container.innerHTML = `
-      <div class="card card-gradient-border fade-in" style="max-width:720px; margin:0 auto; padding:2rem; text-align:center;">
-        <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:0.5rem;">QUIZ EVALUATION COMPLETE</h2>
+      <div class="card card-gradient-border fade-in" style="max-width:820px; margin:0 auto; padding:2rem; text-align:center;">
+        <h2 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:0.35rem;">
+          QUIZ EVALUATION COMPLETE
+        </h2>
         <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1.5rem;">${res.topicName}</p>
 
         <div style="width:130px; height:130px; border-radius:50%; background:var(--bg-tertiary); border:4px solid ${res.score >= 75 ? '#10B981' : '#F59E0B'}; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 1.5rem auto;">
@@ -423,11 +460,106 @@ class QuizEngine {
           <div style="font-size:0.75rem; color:var(--text-muted);">${res.correctCount} / ${res.totalQuestions} Correct</div>
         </div>
 
-        <p style="font-size:0.95rem; color:var(--text-secondary); margin-bottom:1.75rem; max-width:540px; margin-left:auto; margin-right:auto;">
+        <p style="font-size:0.925rem; color:var(--text-secondary); margin-bottom:1.75rem; max-width:580px; margin-left:auto; margin-right:auto;">
           ${res.score >= 75 
             ? '🎉 Outstanding performance! Your mastery for this topic has been updated on your Learning Path.' 
             : '💡 Diagnostic alert: Topic marked as Needs Revision. Your Learning Path has been updated with personalized study recommendations.'}
         </p>
+
+        <!-- NEXAAI LEARNING INTELLIGENCE CARD -->
+        ${nexa ? `
+          <div class="card card-gradient-border" style="margin-bottom:1.75rem; text-align:left; background:var(--bg-secondary); border-left:4px solid ${riskColor}; border-radius:var(--radius-md);">
+            <!-- CARD HEADER -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+              <div style="display:flex; align-items:center; gap:0.6rem;">
+                <span style="font-size:1.4rem; color:var(--accent-cyan);">✦</span>
+                <div>
+                  <h3 style="font-size:1.15rem; font-weight:800; color:var(--text-primary); margin:0; letter-spacing:-0.01em;">
+                    NexaAI
+                  </h3>
+                  <div style="font-size:0.75rem; color:var(--accent-cyan); font-weight:700; text-transform:uppercase; letter-spacing:0.05em;">
+                    EduNexus Learning Intelligence
+                  </div>
+                </div>
+              </div>
+              <span class="badge ${riskBadgeClass}" style="font-size:0.8rem; padding:0.35rem 0.75rem; font-weight:800;">
+                ⚡ ${nexa.riskLevel} RISK
+              </span>
+            </div>
+
+            <!-- ANALYTICAL REASONING CHAIN -->
+            <div style="margin-bottom:1.25rem; background:var(--bg-tertiary); padding:0.85rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+              <div style="font-size:0.725rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.6rem;">
+                🧠 NexaAI Analytical Reasoning Chain
+              </div>
+              <div style="display:flex; align-items:center; flex-wrap:wrap; gap:0.4rem 0.6rem; font-size:0.8rem;">
+                <span style="background:var(--bg-primary); padding:0.25rem 0.65rem; border-radius:4px; border:1px solid var(--border-color); font-weight:600; color:var(--text-primary);">
+                  🎯 Quiz Score: ${res.score}%
+                </span>
+                <span style="color:var(--text-muted);">→</span>
+                <span style="background:var(--bg-primary); padding:0.25rem 0.65rem; border-radius:4px; border:1px solid var(--border-color); font-weight:600; color:${nexa.weakTopic ? '#EF4444' : '#10B981'};">
+                  ⚠️ Weak Topic: ${nexa.weakTopic ? nexa.weakTopic.name : 'None'}
+                </span>
+                <span style="color:var(--text-muted);">→</span>
+                <span style="background:var(--bg-primary); padding:0.25rem 0.65rem; border-radius:4px; border:1px solid var(--border-color); font-weight:600; color:${nexa.prerequisiteGap ? '#F59E0B' : '#10B981'};">
+                  🔗 Prerequisite: ${nexa.prerequisiteGap ? nexa.prerequisiteGap.name : 'None Detected'}
+                </span>
+                <span style="color:var(--text-muted);">→</span>
+                <span class="badge ${riskBadgeClass}" style="font-size:0.75rem;">
+                  ${nexa.riskLevel} RISK
+                </span>
+              </div>
+            </div>
+
+            <!-- THREE METRIC CARDS -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:1.25rem;">
+              <div style="background:var(--bg-tertiary); padding:0.85rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                <div style="font-size:0.725rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Weak Topic</div>
+                <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary); margin-top:0.2rem;">
+                  ${nexa.weakTopic ? nexa.weakTopic.name : 'No Weak Topic Identified'}
+                </div>
+              </div>
+
+              <div style="background:var(--bg-tertiary); padding:0.85rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                <div style="font-size:0.725rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Possible Prerequisite Gap</div>
+                <div style="font-size:0.925rem; font-weight:700; color:var(--text-primary); margin-top:0.2rem;">
+                  ${nexa.prerequisiteGap ? nexa.prerequisiteGap.name : 'None Detected'}
+                </div>
+              </div>
+
+              <div style="background:var(--bg-tertiary); padding:0.85rem 1rem; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+                <div style="font-size:0.725rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Risk Level</div>
+                <div style="font-size:0.95rem; font-weight:800; color:${riskColor}; margin-top:0.2rem;">
+                  ${nexa.riskLevel} RISK
+                </div>
+              </div>
+            </div>
+
+            <!-- EXPLANATION -->
+            <div style="margin-bottom:1.25rem;">
+              <div style="font-size:0.85rem; font-weight:700; color:var(--text-primary); margin-bottom:0.35rem;">
+                💡 Why this recommendation?
+              </div>
+              <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.6; margin:0;">
+                ${nexa.explanation}
+              </p>
+            </div>
+
+            <!-- RECOMMENDED ACTION & FUNCTIONAL BUTTON -->
+            <div style="background:var(--bg-tertiary); padding:1rem 1.15rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+              <div>
+                <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Recommended Action</div>
+                <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin-top:0.15rem;">
+                  ${nexa.recommendedAction}
+                </div>
+              </div>
+
+              <button class="btn btn-primary" onclick="Quiz.executeNexaAction('${nexa.actionType}', '${nexa.targetTopicId}')">
+                ${nexa.actionButtonText} →
+              </button>
+            </div>
+          </div>
+        ` : ''}
 
         <div style="display:flex; justify-content:center; gap:0.85rem; flex-wrap:wrap;">
           <button class="btn btn-secondary" onclick="Quiz.renderHub();">
