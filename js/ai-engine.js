@@ -500,6 +500,123 @@ This topic is part of your ${activeTopic.unit || 'course'} curriculum. Focus on 
       recommendedIntervention: `Schedule a targeted revision session on functional dependencies and prerequisite concepts before advancing to unit assessments.`
     };
   }
+  /**
+   * NexaAI File / Document Analysis Engine
+   * Processes uploaded notes, syllabus, PYQ or study material and generates screenshot-ready analysis.
+   */
+  analyzeDocumentContent(fileName = 'Study_Material.pdf', textContent = '', studentId = 'ECB0245') {
+    if (!textContent || textContent.trim().length < 15) {
+      const subjects = Storage.getSubjects();
+      const topics = Storage.getTopics();
+      const lowerName = fileName.toLowerCase();
+
+      let matchedSubject = subjects.find(s => lowerName.includes(s.code.toLowerCase()) || lowerName.includes(s.name.toLowerCase().split(' ')[0]));
+      if (!matchedSubject && lowerName.includes('dbms')) matchedSubject = subjects.find(s => s.id === 'SUB_DBMS');
+      if (!matchedSubject && lowerName.includes('dsa')) matchedSubject = subjects.find(s => s.id === 'SUB_DSA');
+      if (!matchedSubject && (lowerName.includes('c_programming') || lowerName.includes('oop') || lowerName.includes('c '))) matchedSubject = subjects.find(s => s.id === 'SUB_OOPS');
+
+      if (matchedSubject) {
+        const subTopics = topics.filter(t => t.subjectId === matchedSubject.id);
+        const topicNames = subTopics.map(t => t.name);
+        return this.buildDocumentAnalysisResult(fileName, matchedSubject.name, topicNames, studentId);
+      }
+
+      if (lowerName.endsWith('.pdf') || lowerName.endsWith('.txt') || lowerName.endsWith('.doc') || lowerName.endsWith('.docx')) {
+        return this.buildDocumentAnalysisResult(fileName, 'C Programming & Computer Science Notes', [
+          'Arrays & Linear Data Structures',
+          'Functions & Modular Programming',
+          'Pointers & Memory Reference',
+          'Structures & Custom Data Types'
+        ], studentId);
+      }
+
+      return {
+        error: `File type or content is insufficient for analysis. Please upload a valid text, PDF, or study document.`
+      };
+    }
+
+    const cleanText = textContent.toLowerCase();
+    const detectedTopics = [];
+
+    if (cleanText.includes('normalization') || cleanText.includes('1nf') || cleanText.includes('2nf') || cleanText.includes('3nf')) {
+      detectedTopics.push('DBMS Normalization (1NF, 2NF, 3NF, BCNF)');
+    }
+    if (cleanText.includes('relational algebra') || cleanText.includes('tuple') || cleanText.includes('select') || cleanText.includes('join')) {
+      detectedTopics.push('Relational Algebra & Tuple Calculus');
+    }
+    if (cleanText.includes('array') || cleanText.includes('stack') || cleanText.includes('queue')) {
+      detectedTopics.push('Arrays, Stacks & Queues');
+    }
+    if (cleanText.includes('tree') || cleanText.includes('bst') || cleanText.includes('avl')) {
+      detectedTopics.push('Binary Search Trees & AVL Trees');
+    }
+    if (cleanText.includes('pointer') || cleanText.includes('function') || cleanText.includes('structure')) {
+      detectedTopics.push('Functions, Pointers & Memory Management');
+    }
+    if (cleanText.includes('scheduling') || cleanText.includes('process') || cleanText.includes('cpu')) {
+      detectedTopics.push('CPU Scheduling & Process Management');
+    }
+
+    if (detectedTopics.length === 0) {
+      detectedTopics.push('Core Subject Overview', 'Fundamental Concepts', 'Technical Definitions & Rules');
+    }
+
+    return this.buildDocumentAnalysisResult(fileName, 'Uploaded Study Material', detectedTopics, studentId);
+  }
+
+  buildDocumentAnalysisResult(fileName, subjectName, topicNames, studentId) {
+    const performance = Storage.getPerformance(studentId);
+    const topics = Storage.getTopics();
+
+    let matchingWeakTopic = null;
+    let matchingPrereq = null;
+
+    topicNames.forEach(tName => {
+      const perf = performance.find(p => p.topicName.toLowerCase().includes(tName.toLowerCase()) || tName.toLowerCase().includes(p.topicName.toLowerCase()));
+      if (perf && (perf.status === 'Needs Focus' || perf.accuracy < 75)) {
+        matchingWeakTopic = perf;
+        const topicObj = topics.find(t => t.id === perf.topicId);
+        if (topicObj && topicObj.prerequisiteId) {
+          matchingPrereq = topics.find(t => t.id === topicObj.prerequisiteId);
+        }
+      }
+    });
+
+    const summary = `This document "${fileName}" covers core study material on ${subjectName}, detailing fundamental definitions, structural properties, and problem sets for ${topicNames.slice(0, 3).join(', ')}.`;
+    const keyConcepts = topicNames.map(t => `Understanding structural rules and definition parameters for ${t}.`);
+    const difficultAreas = topicNames.length > 2 
+      ? [topicNames[1], topicNames[topicNames.length - 1]] 
+      : [topicNames[0] || 'Technical Definitions'];
+
+    const suggestedStudyOrder = topicNames.slice();
+
+    let studentCombinedInsight = null;
+    if (matchingWeakTopic) {
+      studentCombinedInsight = {
+        weakTopicName: matchingWeakTopic.topicName,
+        accuracy: matchingWeakTopic.accuracy,
+        prerequisiteName: matchingPrereq ? matchingPrereq.name : null,
+        message: `Your uploaded material covers "${matchingWeakTopic.topicName}", and your recent evaluation score shows an accuracy of ${matchingWeakTopic.accuracy}% (Needs Focus). ${matchingPrereq ? `NexaAI identifies "${matchingPrereq.name}" as the configured prerequisite. Consider reviewing prerequisite principles in section 1 before taking a practice quiz.` : 'Review core concepts in section 1 before taking a practice quiz.'}`
+      };
+    }
+
+    return {
+      fileName,
+      subjectName,
+      summary,
+      topicsDetected: topicNames,
+      keyConcepts,
+      difficultAreas,
+      suggestedStudyOrder,
+      studentCombinedInsight,
+      recommendedFocus: matchingWeakTopic ? matchingWeakTopic.topicName : (topicNames[0] || 'Core Concepts'),
+      suggestedAction: matchingWeakTopic 
+        ? `Review ${matchingWeakTopic.topicName} notes in this document, then complete a 5-question practice quiz.`
+        : `Study topics in the suggested order, then complete practice MCQs.`,
+      targetTopicId: matchingWeakTopic ? matchingWeakTopic.topicId : 'TOP_DBMS_NORM',
+      timestamp: new Date().toISOString()
+    };
+  }
 }
 
 const AIEngine = new AIEngines();

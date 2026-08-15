@@ -147,6 +147,9 @@ class StudentDashboardController {
                   <button class="btn btn-secondary btn-sm" onclick="App.openNexaAIChat('Explain my weak topics')">
                     💡 Explain Weak Topics
                   </button>
+                  <button class="btn btn-outline btn-sm" onclick="App.triggerFileUploadForAnalysis()" style="border-color:var(--accent-cyan); color:var(--accent-cyan);">
+                    📄 Analyze Study File
+                  </button>
                 </div>
               </div>
             </div>

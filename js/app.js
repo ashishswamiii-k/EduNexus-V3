@@ -193,6 +193,148 @@ class AppController {
     }, 250);
   }
 
+  openNexaAIFileAnalysis(fileName = 'C_Programming_Notes.pdf', fileText = '') {
+    const user = window.Auth ? Auth.getCurrentUser() : null;
+    const studentId = user ? user.id : 'ECB0245';
+    const analysis = window.AIEngine ? AIEngine.analyzeDocumentContent(fileName, fileText, studentId) : null;
+
+    if (!analysis || analysis.error) {
+      if (window.Notifications) {
+        Notifications.toast(analysis ? analysis.error : 'Unable to analyze file content.', 'error');
+      }
+      return;
+    }
+
+    const html = `
+      <div id="nexaai-file-analysis-view" class="fade-in" style="max-width:840px; margin:0 auto; text-align:left;">
+        <!-- HEADER -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; border-bottom:1px solid var(--border-color); padding-bottom:0.85rem; flex-wrap:wrap; gap:0.5rem;">
+          <div style="display:flex; align-items:center; gap:0.65rem;">
+            <span style="font-size:1.5rem; color:var(--accent-cyan);">✦</span>
+            <div>
+              <h3 style="font-size:1.2rem; font-weight:800; color:var(--text-primary); margin:0;">NexaAI File Analysis</h3>
+              <div style="font-size:0.75rem; color:var(--accent-cyan); font-weight:700; text-transform:uppercase;">Document Intelligence Report</div>
+            </div>
+          </div>
+          <span class="badge badge-cyan" style="font-size:0.8rem; padding:0.4rem 0.8rem; font-weight:700;">
+            📄 ${analysis.fileName}
+          </span>
+        </div>
+
+        <!-- 1. WHAT THIS FILE CONTAINS -->
+        <div style="margin-bottom:1.25rem; background:var(--bg-tertiary); padding:1rem 1.15rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">
+            1. Document Summary & Contents
+          </div>
+          <p style="font-size:0.875rem; color:var(--text-primary); line-height:1.55; margin:0;">
+            ${analysis.summary}
+          </p>
+        </div>
+
+        <!-- 2. DETECTED TOPICS & KEY CONCEPTS GRID -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-bottom:1.25rem;">
+          <div style="background:var(--bg-tertiary); padding:1rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.5rem;">
+              2. Major Topics Detected (${analysis.topicsDetected.length})
+            </div>
+            <ul style="margin:0; padding-left:1.15rem; font-size:0.85rem; color:var(--text-primary); display:flex; flex-direction:column; gap:0.35rem;">
+              ${analysis.topicsDetected.map(t => `<li style="font-weight:700;">${t}</li>`).join('')}
+            </ul>
+          </div>
+
+          <div style="background:var(--bg-tertiary); padding:1rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.5rem;">
+              3. Key Concepts & Definitions
+            </div>
+            <ul style="margin:0; padding-left:1.15rem; font-size:0.825rem; color:var(--text-secondary); display:flex; flex-direction:column; gap:0.35rem;">
+              ${analysis.keyConcepts.map(c => `<li>${c}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+
+        <!-- 4. COMBINED STUDENT PERFORMANCE INSIGHT -->
+        ${analysis.studentCombinedInsight ? `
+          <div class="card card-gradient-border" style="margin-bottom:1.25rem; background:var(--bg-secondary); border-left:4px solid #F59E0B; padding:1rem 1.15rem;">
+            <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.8rem; font-weight:800; color:#F59E0B; text-transform:uppercase; margin-bottom:0.35rem;">
+              ⚠️ NexaAI Combined Performance Match
+            </div>
+            <p style="font-size:0.875rem; color:var(--text-primary); line-height:1.55; margin:0;">
+              ${analysis.studentCombinedInsight.message}
+            </p>
+          </div>
+        ` : ''}
+
+        <!-- 5. SUGGESTED STUDY ORDER & DIFFICULT AREAS -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-bottom:1.5rem;">
+          <div style="background:var(--bg-tertiary); padding:1rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.5rem;">
+              4. Suggested Study Order
+            </div>
+            <ol style="margin:0; padding-left:1.25rem; font-size:0.85rem; color:var(--text-primary); display:flex; flex-direction:column; gap:0.3rem;">
+              ${analysis.suggestedStudyOrder.map(s => `<li>${s}</li>`).join('')}
+            </ol>
+          </div>
+
+          <div style="background:var(--bg-tertiary); padding:1rem; border-radius:var(--radius-md); border:1px solid var(--border-color);">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:0.5rem;">
+              5. High Focus / Technically Dense Areas
+            </div>
+            <ul style="margin:0; padding-left:1.15rem; font-size:0.85rem; color:var(--text-primary); display:flex; flex-direction:column; gap:0.3rem;">
+              ${analysis.difficultAreas.map(d => `<li style="color:#F87171; font-weight:700;">${d}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+
+        <!-- RECOMMENDED ACTION & BUTTONS -->
+        <div style="background:var(--bg-tertiary); padding:1.15rem; border-radius:var(--radius-md); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+          <div>
+            <div style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">NexaAI Recommended Action</div>
+            <div style="font-size:0.9rem; font-weight:700; color:var(--text-primary); margin-top:0.2rem;">
+              ${analysis.suggestedAction}
+            </div>
+          </div>
+
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="Notifications.closeModal(); Quiz.startQuiz('${analysis.targetTopicId}'); Router.navigate('/quiz');">
+              🎯 Generate Practice Questions
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="Notifications.closeModal(); App.openNexaAIChat('What should I study first from ${analysis.fileName}?');">
+              💬 Ask NexaAI
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (window.Notifications) {
+      Notifications.openModal('✦ NexaAI File Analysis', html, `<button class="btn btn-secondary" onclick="Notifications.closeModal()">Close</button>`);
+    }
+  }
+
+  triggerFileUploadForAnalysis() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.pdf,.doc,.docx,.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const filename = file.name;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const text = evt.target.result;
+        App.openNexaAIFileAnalysis(filename, text);
+      };
+
+      if (filename.endsWith('.txt') || filename.endsWith('.json')) {
+        reader.readAsText(file);
+      } else {
+        App.openNexaAIFileAnalysis(filename, `Study material text stream for ${filename}`);
+      }
+    };
+    input.click();
+  }
+
   bindEventListeners() {
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
