@@ -13,8 +13,7 @@ class RouterEngine {
       '/auth': this.renderAuth.bind(this),
       '/login': this.renderAuth.bind(this),
       '/student': this.renderStudentDashboard.bind(this),
-      '/teacher': this.renderTeacherDashboard.bind(this),
-      '/admin': this.renderAdminDashboard.bind(this),
+      '/teacher': () => TeacherModule.navigate('dashboard'),
       '/subjects': this.renderSubjects.bind(this),
       '/subject-details': this.renderSubjectDetails.bind(this),
       '/topics': this.renderTopics.bind(this),
@@ -29,22 +28,24 @@ class RouterEngine {
       '/licenses': this.renderLicenses.bind(this),
 
       // Teacher Sub-routes
-      '/teacher-students': this.renderTeacherStudents.bind(this),
-      '/teacher-classes': this.renderTeacherClasses.bind(this),
-      '/teacher-performance': this.renderTeacherPerformance.bind(this),
-      '/teacher-topics': this.renderTeacherTopics.bind(this),
-      '/teacher-interventions': this.renderTeacherInterventions.bind(this),
-      '/teacher-quizzes': this.renderTeacherQuizzes.bind(this),
-      '/teacher-reports': this.renderTeacherReports.bind(this),
+      '/teacher-students': () => TeacherModule.navigate('students'),
+      '/teacher-classes': () => TeacherModule.navigate('classes'),
+      '/teacher-performance': () => TeacherModule.navigate('performance'),
+      '/teacher-topics': () => TeacherModule.navigate('weak-topics'),
+      '/teacher-interventions': () => TeacherModule.navigate('interventions'),
+      '/teacher-quizzes': () => TeacherModule.navigate('quizzes'),
+      '/teacher-reports': () => TeacherModule.navigate('notifications'),
+      '/teacher-notifications': () => TeacherModule.navigate('notifications'),
 
-      // Admin Sub-routes
-      '/admin-users': this.renderAdminUsers.bind(this),
-      '/admin-students': this.renderAdminStudents.bind(this),
-      '/admin-teachers': this.renderAdminTeachers.bind(this),
-      '/admin-classes': this.renderAdminClasses.bind(this),
-      '/admin-subjects': this.renderAdminSubjects.bind(this),
-      '/admin-analytics': this.renderAdminAnalytics.bind(this),
-      '/admin-reports': this.renderAdminReports.bind(this)
+      // Admin Sub-routes (7 Working Sections)
+      '/admin': () => AdminView.navigate('dashboard'),
+      '/admin-users': () => AdminView.navigate('users'),
+      '/admin-students': () => AdminView.navigate('students'),
+      '/admin-teachers': () => AdminView.navigate('teachers'),
+      '/admin-classes': () => AdminView.navigate('institutes'),
+      '/admin-subjects': () => AdminView.navigate('institutes'),
+      '/admin-analytics': () => AdminView.navigate('analytics'),
+      '/admin-reports': () => AdminView.navigate('analytics')
     };
 
     this.currentRoute = '/';
@@ -182,14 +183,34 @@ class RouterEngine {
     }
   }
 
+  navigateDashboard() {
+    const user = Auth.getCurrentUser();
+    if (!user) {
+      this.navigate('/login');
+      return;
+    }
+    const role = (user.role || 'student').toLowerCase();
+    const targetRoute = role === 'admin' ? '/admin' : role === 'teacher' ? '/teacher' : '/student';
+    this.navigate(targetRoute);
+  }
+
   updateActiveSidebarItem() {
     const navItems = document.querySelectorAll('#sidebar-nav-items .nav-item');
     navItems.forEach(item => {
-      const onclickAttr = item.getAttribute('onclick') || '';
-      if (onclickAttr.includes(`'${this.currentRoute}'`)) {
-        item.classList.add('active');
+      const dataRoute = item.getAttribute('data-route');
+      if (dataRoute) {
+        if (dataRoute === this.currentRoute) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
       } else {
-        item.classList.remove('active');
+        const onclickAttr = item.getAttribute('onclick') || '';
+        if (onclickAttr.includes(`'${this.currentRoute}'`)) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
       }
     });
   }
@@ -239,78 +260,73 @@ class RouterEngine {
 
       if (role === 'teacher') {
         navItems.innerHTML = `
-          <a class="nav-item ${this.currentRoute === '/teacher' ? 'active' : ''}" onclick="Router.navigate('/teacher')" title="Dashboard">
+          <a class="nav-item ${this.currentRoute === '/teacher' ? 'active' : ''}" onclick="Router.navigate('/teacher')" data-route="/teacher" data-section="dashboard" title="Dashboard">
             <span class="nav-icon"><i class="ri-dashboard-line"></i></span>
             <span class="nav-text">Dashboard</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/teacher-students' ? 'active' : ''}" onclick="Router.navigate('/teacher-students')" title="Students">
+          <a class="nav-item ${this.currentRoute === '/teacher-students' ? 'active' : ''}" onclick="Router.navigate('/teacher-students')" data-route="/teacher-students" data-section="students" title="Students">
             <span class="nav-icon"><i class="ri-user-line"></i></span>
             <span class="nav-text">Students</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/teacher-classes' ? 'active' : ''}" onclick="Router.navigate('/teacher-classes')" title="Classes / Subjects">
+          <a class="nav-item ${this.currentRoute === '/teacher-classes' ? 'active' : ''}" onclick="Router.navigate('/teacher-classes')" data-route="/teacher-classes" data-section="classes" title="Classes / Subjects">
             <span class="nav-icon"><i class="ri-book-3-line"></i></span>
             <span class="nav-text">Classes / Subjects</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/teacher-performance' ? 'active' : ''}" onclick="Router.navigate('/teacher-performance')" title="Student Performance">
+          <a class="nav-item ${this.currentRoute === '/teacher-performance' ? 'active' : ''}" onclick="Router.navigate('/teacher-performance')" data-route="/teacher-performance" data-section="performance" title="Student Performance">
             <span class="nav-icon"><i class="ri-bar-chart-line"></i></span>
             <span class="nav-text">Student Performance</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/teacher-topics' ? 'active' : ''}" onclick="Router.navigate('/teacher-topics')" title="Weak Topics">
+          <a class="nav-item ${this.currentRoute === '/teacher-topics' ? 'active' : ''}" onclick="Router.navigate('/teacher-topics')" data-route="/teacher-topics" data-section="weak-topics" title="Weak Topics">
             <span class="nav-icon"><i class="ri-alert-line"></i></span>
             <span class="nav-text">Weak Topics</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/teacher-interventions' ? 'active' : ''}" onclick="Router.navigate('/teacher-interventions')" title="Interventions">
+          <a class="nav-item ${this.currentRoute === '/teacher-interventions' ? 'active' : ''}" onclick="Router.navigate('/teacher-interventions')" data-route="/teacher-interventions" data-section="interventions" title="Interventions">
             <span class="nav-icon"><i class="ri-lightbulb-line"></i></span>
             <span class="nav-text">Interventions</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/teacher-quizzes' ? 'active' : ''}" onclick="Router.navigate('/teacher-quizzes')" title="Quiz Management">
+          <a class="nav-item ${this.currentRoute === '/teacher-quizzes' ? 'active' : ''}" onclick="Router.navigate('/teacher-quizzes')" data-route="/teacher-quizzes" data-section="quizzes" title="Quiz Management">
             <span class="nav-icon"><i class="ri-questionnaire-line"></i></span>
             <span class="nav-text">Quiz Management</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/teacher-reports' ? 'active' : ''}" onclick="Router.navigate('/teacher-reports')" title="Reports">
-            <span class="nav-icon"><i class="ri-file-chart-line"></i></span>
-            <span class="nav-text">Reports</span>
+          <a class="nav-item ${this.currentRoute === '/teacher-notifications' ? 'active' : ''}" onclick="Router.navigate('/teacher-notifications')" data-route="/teacher-notifications" data-section="notifications" title="Notifications" style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:0.85rem;">
+              <span class="nav-icon"><i class="ri-notification-3-line"></i></span>
+              <span class="nav-text">Notifications</span>
+            </div>
+            <span style="background:linear-gradient(135deg, #EC4899, #8B5CF6); color:#fff; font-size:0.7rem; font-weight:800; padding:0.1rem 0.45rem; border-radius:9999px;">8</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/settings' ? 'active' : ''}" onclick="Router.navigate('/settings')" title="Settings">
+          <a class="nav-item ${this.currentRoute === '/settings' ? 'active' : ''}" onclick="Router.navigate('/settings')" data-route="/settings" data-section="settings" title="Settings">
             <span class="nav-icon"><i class="ri-settings-4-line"></i></span>
             <span class="nav-text">Settings</span>
           </a>
         `;
       } else if (role === 'admin') {
         navItems.innerHTML = `
-          <a class="nav-item ${this.currentRoute === '/admin' ? 'active' : ''}" onclick="Router.navigate('/admin')" title="Dashboard">
-            <span class="nav-icon"><i class="ri-shield-user-line"></i></span>
+          <a class="nav-item ${this.currentRoute === '/admin' ? 'active' : ''}" onclick="Router.navigate('/admin')" data-route="/admin" data-section="dashboard" title="Dashboard">
+            <span class="nav-icon"><i class="ri-dashboard-line"></i></span>
             <span class="nav-text">Dashboard</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/admin-users' ? 'active' : ''}" onclick="Router.navigate('/admin-users')" title="Users">
+          <a class="nav-item ${this.currentRoute === '/admin-users' ? 'active' : ''}" onclick="Router.navigate('/admin-users')" data-route="/admin-users" data-section="users" title="Users">
             <span class="nav-icon"><i class="ri-group-line"></i></span>
             <span class="nav-text">Users</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/admin-students' ? 'active' : ''}" onclick="Router.navigate('/admin-students')" title="Students">
+          <a class="nav-item ${this.currentRoute === '/admin-students' ? 'active' : ''}" onclick="Router.navigate('/admin-students')" data-route="/admin-students" data-section="students" title="Students">
             <span class="nav-icon"><i class="ri-user-follow-line"></i></span>
             <span class="nav-text">Students</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/admin-teachers' ? 'active' : ''}" onclick="Router.navigate('/admin-teachers')" title="Teachers">
+          <a class="nav-item ${this.currentRoute === '/admin-teachers' ? 'active' : ''}" onclick="Router.navigate('/admin-teachers')" data-route="/admin-teachers" data-section="teachers" title="Teachers">
             <span class="nav-icon"><i class="ri-user-star-line"></i></span>
             <span class="nav-text">Teachers</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/admin-classes' ? 'active' : ''}" onclick="Router.navigate('/admin-classes')" title="Institutions / Classes">
+          <a class="nav-item ${this.currentRoute === '/admin-classes' ? 'active' : ''}" onclick="Router.navigate('/admin-classes')" data-route="/admin-classes" data-section="institutes" title="Institutes & Classes">
             <span class="nav-icon"><i class="ri-building-4-line"></i></span>
-            <span class="nav-text">Institutions / Classes</span>
+            <span class="nav-text">Institutes & Classes</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/admin-subjects' ? 'active' : ''}" onclick="Router.navigate('/admin-subjects')" title="Subjects">
-            <span class="nav-icon"><i class="ri-book-read-line"></i></span>
-            <span class="nav-text">Subjects</span>
-          </a>
-          <a class="nav-item ${this.currentRoute === '/admin-analytics' ? 'active' : ''}" onclick="Router.navigate('/admin-analytics')" title="System Analytics">
+          <a class="nav-item ${this.currentRoute === '/admin-analytics' ? 'active' : ''}" onclick="Router.navigate('/admin-analytics')" data-route="/admin-analytics" data-section="analytics" title="System Analytics">
             <span class="nav-icon"><i class="ri-pulse-line"></i></span>
             <span class="nav-text">System Analytics</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/admin-reports' ? 'active' : ''}" onclick="Router.navigate('/admin-reports')" title="Reports">
-            <span class="nav-icon"><i class="ri-file-text-line"></i></span>
-            <span class="nav-text">Reports</span>
-          </a>
-          <a class="nav-item ${this.currentRoute === '/settings' ? 'active' : ''}" onclick="Router.navigate('/settings')" title="Settings">
+          <a class="nav-item ${this.currentRoute === '/settings' ? 'active' : ''}" onclick="Router.navigate('/settings')" data-route="/settings" data-section="settings" title="Settings">
             <span class="nav-icon"><i class="ri-settings-4-line"></i></span>
             <span class="nav-text">Settings</span>
           </a>
@@ -318,39 +334,38 @@ class RouterEngine {
       } else {
         // Student Sidebar
         navItems.innerHTML = `
-          <a class="nav-item ${this.currentRoute === '/student' ? 'active' : ''}" onclick="Router.navigate('/student')" title="Dashboard">
+          <a class="nav-item ${this.currentRoute === '/student' ? 'active' : ''}" onclick="Router.navigate('/student')" data-route="/student" title="Dashboard">
             <span class="nav-icon"><i class="ri-dashboard-line"></i></span>
             <span class="nav-text">Dashboard</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/subjects' ? 'active' : ''}" onclick="Router.navigate('/subjects')" title="My Subjects">
+          <a class="nav-item ${this.currentRoute === '/subjects' ? 'active' : ''}" onclick="Router.navigate('/subjects')" data-route="/subjects" title="My Subjects">
             <span class="nav-icon"><i class="ri-book-3-line"></i></span>
             <span class="nav-text">My Subjects</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/learning-path' ? 'active' : ''}" onclick="Router.navigate('/learning-path')" title="Learning Path">
+          <a class="nav-item ${this.currentRoute === '/learning-path' ? 'active' : ''}" onclick="Router.navigate('/learning-path')" data-route="/learning-path" title="Learning Path">
             <span class="nav-icon"><i class="ri-node-tree"></i></span>
             <span class="nav-text">Learning Path</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/quiz' ? 'active' : ''}" onclick="Router.navigate('/quiz')" title="Quizzes">
+          <a class="nav-item ${this.currentRoute === '/quiz' ? 'active' : ''}" onclick="Router.navigate('/quiz')" data-route="/quiz" title="Quizzes">
             <span class="nav-icon"><i class="ri-questionnaire-line"></i></span>
             <span class="nav-text">Quizzes</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/progress' ? 'active' : ''}" onclick="Router.navigate('/progress')" title="Academic Progress">
+          <a class="nav-item ${this.currentRoute === '/progress' ? 'active' : ''}" onclick="Router.navigate('/progress')" data-route="/progress" title="Academic Progress">
             <span class="nav-icon"><i class="ri-bar-chart-line"></i></span>
             <span class="nav-text">Academic Progress</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/achievements' ? 'active' : ''}" onclick="Router.navigate('/achievements')" title="Achievements">
+          <a class="nav-item ${this.currentRoute === '/achievements' ? 'active' : ''}" onclick="Router.navigate('/achievements')" data-route="/achievements" title="Achievements">
             <span class="nav-icon"><i class="ri-medal-line"></i></span>
             <span class="nav-text">Achievements</span>
           </a>
-          <a class="nav-item ${this.currentRoute === '/settings' ? 'active' : ''}" onclick="Router.navigate('/settings')" title="Settings">
+          <a class="nav-item ${this.currentRoute === '/settings' ? 'active' : ''}" onclick="Router.navigate('/settings')" data-route="/settings" title="Settings">
             <span class="nav-icon"><i class="ri-settings-4-line"></i></span>
             <span class="nav-text">Settings</span>
           </a>
         `;
       }
-    } else {
-      this.updateActiveSidebarItem();
     }
+    this.updateActiveSidebarItem();
 
     // Update Sidebar User Footer
     this.updateProfileElements(user);
@@ -643,48 +658,6 @@ class RouterEngine {
                   <a onclick="Router.openStudentRegisterModal()" style="color:var(--accent-cyan); font-weight:600; cursor:pointer; text-decoration:underline; font-size:0.85rem;">New Student? Register</a>
                 `}
               </div>
-
-              <!-- DEMO CREDENTIALS HELPER SECTION -->
-              <div style="margin-top:1.15rem; padding-top:0.85rem; border-top:1px dashed var(--border-color); text-align:left;">
-                <div style="font-size:0.725rem; font-weight:800; color:var(--accent-cyan); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.5rem; display:flex; align-items:center; gap:0.35rem;">
-                  ⚡ Demo Credentials
-                </div>
-
-                <div style="display:flex; flex-direction:column; gap:0.45rem;">
-                  <!-- Student Demo Pill -->
-                  <div style="background:var(--bg-tertiary); padding:0.45rem 0.65rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.35rem;">
-                    <div style="font-size:0.75rem;">
-                      <strong style="color:var(--text-primary);">Student:</strong>
-                      <span style="color:var(--text-muted); margin-left:0.25rem;">ECB0245 / student123</span>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-xs" style="font-size:0.725rem; padding:0.2rem 0.5rem;" onclick="Router.useDemoAccount('student')">
-                      Use Student
-                    </button>
-                  </div>
-
-                  <!-- Teacher Demo Pill -->
-                  <div style="background:var(--bg-tertiary); padding:0.45rem 0.65rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.35rem;">
-                    <div style="font-size:0.75rem;">
-                      <strong style="color:var(--text-primary);">Teacher:</strong>
-                      <span style="color:var(--text-muted); margin-left:0.25rem;">ECB1234 / teacher123</span>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-xs" style="font-size:0.725rem; padding:0.2rem 0.5rem;" onclick="Router.useDemoAccount('teacher')">
-                      Use Teacher
-                    </button>
-                  </div>
-
-                  <!-- Admin Demo Pill -->
-                  <div style="background:var(--bg-tertiary); padding:0.45rem 0.65rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.35rem;">
-                    <div style="font-size:0.75rem;">
-                      <strong style="color:var(--text-primary);">Admin:</strong>
-                      <span style="color:var(--text-muted); margin-left:0.25rem;">ADMIN001 / admin123</span>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-xs" style="font-size:0.725rem; padding:0.2rem 0.5rem;" onclick="Router.useDemoAccount('admin')">
-                      Use Admin
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -784,213 +757,37 @@ class RouterEngine {
 
   renderTeacherStudents() {
     const container = document.getElementById('page-body-container');
-    if (!container) return;
-    const users = Storage.getUsers().filter(u => u.role === 'student');
-    container.innerHTML = `
-      <div class="fade-in" style="padding-top:0.5rem;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
-          <div>
-            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">ENROLLED STUDENTS ROSTER (${users.length})</h1>
-            <p style="font-size:0.875rem; color:var(--text-muted);">Computer Science & Engineering Department</p>
-          </div>
-          <div class="search-box">
-            <input type="text" class="form-control" placeholder="Search student name or ID..." onkeyup="TeacherView.filterRoster(this.value)">
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Student Name</th>
-                  <th>Student ID</th>
-                  <th>Branch / Section</th>
-                  <th>Academic Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="teacher-roster-tbody">
-                ${users.map(u => `
-                  <tr>
-                    <td><strong>${u.name}</strong></td>
-                    <td>${u.id}</td>
-                    <td>${u.branch || 'Computer Science'} (${u.classId || 'Sec-A'})</td>
-                    <td><span class="badge ${u.streakDays > 5 ? 'badge-low' : 'badge-medium'}">${u.streakDays || 1}-Day Active Streak</span></td>
-                    <td>
-                      <button class="btn btn-secondary btn-sm" onclick="TeacherView.openStudentProfileModal('${u.id}')">Profile</button>
-                      <button class="btn btn-primary btn-sm" onclick="TeacherView.openCreateInterventionModal('${u.id}')">Intervene</button>
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `;
+    if (container && window.TeacherView) TeacherView.renderStudents(container);
   }
 
   renderTeacherClasses() {
     const container = document.getElementById('page-body-container');
-    if (!container) return;
-    const classes = Storage.getClasses();
-    const subjects = Storage.getSubjects();
-
-    container.innerHTML = `
-      <div class="fade-in" style="padding-top:0.5rem;">
-        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">CLASSES & CURRICULUM SUBJECTS</h1>
-        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:1.25rem; margin-bottom:2rem;">
-          ${classes.map(c => `
-            <div class="card card-gradient-border">
-              <span class="badge badge-cyan" style="margin-bottom:0.5rem;">Section ${c.section}</span>
-              <h3 style="font-size:1.15rem; font-weight:700; color:var(--text-primary); margin-bottom:0.35rem;">${c.name}</h3>
-              <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">Total Students Enrolled: <strong>${c.studentCount}</strong></p>
-              <button class="btn btn-outline btn-sm" style="width:100%;" onclick="Router.navigate('/teacher-students')">View Roster &rarr;</button>
-            </div>
-          `).join('')}
-        </div>
-
-        <h2 style="font-size:1.25rem; font-weight:700; color:var(--text-primary); margin-bottom:1rem;">Assigned Course Subjects</h2>
-        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:1rem;">
-          ${subjects.slice(0, 5).map(s => `
-            <div class="card">
-              <span class="badge badge-medium" style="margin-bottom:0.35rem;">${s.code}</span>
-              <h4 style="font-weight:700; font-size:1rem;">${s.name}</h4>
-              <p class="text-xs text-muted">${s.semester}</p>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+    if (container && window.TeacherView) TeacherView.renderClasses(container);
   }
 
   renderTeacherPerformance() {
     const container = document.getElementById('page-body-container');
-    if (!container) return;
-    container.innerHTML = `
-      <div class="fade-in" style="padding-top:0.5rem;">
-        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">STUDENT ACADEMIC PERFORMANCE MATRIX</h1>
-        <div class="card card-gradient-border" style="margin-bottom:1.5rem;">
-          <h3>Class Average Overview</h3>
-          <p class="text-sm text-secondary" style="margin-bottom:1rem;">Aggregated analytics for B.Tech Computer Science (Semester 3)</p>
-          <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; text-align:center;">
-            <div style="background:var(--bg-tertiary); padding:1rem; border-radius:var(--radius-sm);">
-              <div style="font-size:1.8rem; font-weight:800; color:var(--accent-cyan);">74%</div>
-              <div style="font-size:0.75rem; color:var(--text-muted);">Overall Class Score</div>
-            </div>
-            <div style="background:var(--bg-tertiary); padding:1rem; border-radius:var(--radius-sm);">
-              <div style="font-size:1.8rem; font-weight:800; color:var(--accent-emerald);">82%</div>
-              <div style="font-size:0.75rem; color:var(--text-muted);">Data Structures Accuracy</div>
-            </div>
-            <div style="background:var(--bg-tertiary); padding:1rem; border-radius:var(--radius-sm);">
-              <div style="font-size:1.8rem; font-weight:800; color:var(--accent-rose);">48%</div>
-              <div style="font-size:0.75rem; color:var(--text-muted);">DBMS Normalization Score</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    if (container && window.TeacherView) TeacherView.renderPerformance(container);
   }
 
   renderTeacherTopics() {
     const container = document.getElementById('page-body-container');
-    if (!container) return;
-    const topics = Storage.getTopics();
-    container.innerHTML = `
-      <div class="fade-in" style="padding-top:0.5rem;">
-        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">CONCEPT MASTERY & WEAK TOPICS ANALYTICS</h1>
-        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:1.25rem;">
-          ${topics.slice(0, 6).map(t => `
-            <div class="card ${t.id === 'TOP_DBMS_NORM' ? 'card-gradient-border' : ''}">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
-                <span class="badge ${t.difficulty === 'Hard' ? 'badge-high' : t.difficulty === 'Medium' ? 'badge-medium' : 'badge-low'}">${t.difficulty}</span>
-                <span style="font-size:0.75rem; color:var(--text-muted);">${t.unit}</span>
-              </div>
-              <h3 style="font-size:1.05rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">${t.name}</h3>
-              <div style="font-size:0.8rem; color:var(--text-muted);">Prerequisite: ${t.prerequisiteId || 'None'}</div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+    if (container && window.TeacherView) TeacherView.renderWeakTopics(container);
   }
 
   renderTeacherInterventions() {
     const container = document.getElementById('page-body-container');
-    if (!container) return;
-    const list = Storage.getInterventions();
-    container.innerHTML = `
-      <div class="fade-in" style="padding-top:0.5rem;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
-          <div>
-            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">AI EARLY INTERVENTIONS LOG (${list.length})</h1>
-            <p style="font-size:0.875rem; color:var(--text-muted);">Targeted student remediation alerts sent by instructors.</p>
-          </div>
-          <button class="btn btn-primary" onclick="TeacherView.openCreateInterventionModal()">+ Send New Intervention</button>
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:1rem;">
-          ${list.map(i => `
-            <div class="card card-gradient-border">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
-                <span class="badge badge-cyan">${i.type}</span>
-                <span class="badge badge-high">${i.status}</span>
-              </div>
-              <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary); margin-bottom:0.25rem;">Target Student: ${i.studentId} — ${i.topicName}</h3>
-              <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:0.5rem;">"${i.note}"</p>
-              <div style="font-size:0.75rem; color:var(--text-muted);">Created by ${i.teacherName} on ${new Date(i.createdAt).toLocaleDateString()}</div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+    if (container && window.TeacherView) TeacherView.renderInterventions(container);
   }
 
   renderTeacherQuizzes() {
     const container = document.getElementById('page-body-container');
-    if (!container) return;
-    const questions = Storage.getQuestions();
-    container.innerHTML = `
-      <div class="fade-in" style="padding-top:0.5rem;">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
-          <div>
-            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">QUIZ MANAGEMENT & QUESTION BANK (${questions.length})</h1>
-            <p style="font-size:0.875rem; color:var(--text-muted);">Verified MCQ question repository.</p>
-          </div>
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:1rem;">
-          ${questions.slice(0, 5).map((q, idx) => `
-            <div class="card">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.35rem;">
-                <span class="badge badge-cyan">${q.subjectId}</span>
-                <span class="badge badge-medium">${q.difficulty}</span>
-              </div>
-              <h4 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin-bottom:0.5rem;">Q${idx + 1}: ${q.question}</h4>
-              <div style="font-size:0.8rem; color:var(--text-secondary); display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
-                ${q.options.map((opt, i) => `<div style="padding:0.25rem 0.5rem; background:var(--bg-tertiary); border-radius:4px; ${i === q.correctAnswer ? 'border:1px solid #10B981; color:#10B981;' : ''}">${String.fromCharCode(65 + i)}. ${opt}</div>`).join('')}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+    if (container && window.TeacherView) TeacherView.renderQuizzes(container);
   }
 
   renderTeacherReports() {
     const container = document.getElementById('page-body-container');
-    if (!container) return;
-    container.innerHTML = `
-      <div class="fade-in" style="padding-top:0.5rem;">
-        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary); margin-bottom:1.5rem;">INSTRUCTOR REPORTS & EVALUATION SUMMARY</h1>
-        <div class="card card-gradient-border">
-          <h3>Semester 3 Comprehensive Diagnostic Report</h3>
-          <p class="text-sm text-secondary" style="margin-top:0.5rem; margin-bottom:1.25rem;">Includes quiz completion stats, student risk rosters, and AI early intervention tracking.</p>
-          <button class="btn btn-primary" onclick="Notifications.toast('Downloading PDF summary report...', 'info')">📄 Download Class Performance PDF</button>
-        </div>
-      </div>
-    `;
+    if (container && window.TeacherView) TeacherView.renderReports(container);
   }
 
   renderAdminDashboard() {
@@ -1772,9 +1569,15 @@ class RouterEngine {
             👤 ACCOUNT & PROFILE
           </h3>
           <form onsubmit="event.preventDefault(); Router.saveProfileSettings();">
-            <div class="form-group" style="margin-bottom:1.15rem;">
-              <label class="form-label" style="font-weight:600;">Full Name</label>
-              <input type="text" id="setting-name" class="form-control" value="${user.name || ''}" required />
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.15rem; margin-bottom:1.15rem;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-weight:600;">Full Name</label>
+                <input type="text" id="setting-name" class="form-control" value="${user.name || ''}" required />
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-weight:600;">Account ID / Roll No (Fixed Authentication ID)</label>
+                <input type="text" class="form-control" value="${user.id || 'ECB0245'}" disabled style="opacity:0.7; cursor:not-allowed;" />
+              </div>
             </div>
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.15rem; margin-bottom:1.15rem;">
               <div class="form-group" style="margin:0;">
@@ -1784,6 +1587,16 @@ class RouterEngine {
               <div class="form-group" style="margin:0;">
                 <label class="form-label" style="font-weight:600;">Mobile Number</label>
                 <input type="text" id="setting-mobile" class="form-control" value="${user.mobileNumber || '+91 9876543210'}" required />
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1.15rem; margin-bottom:1.15rem;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-weight:600;">Academic Branch / Department</label>
+                <input type="text" id="setting-branch" class="form-control" value="${user.branch || 'Computer Science & Engineering'}" />
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-weight:600;">Class / Section</label>
+                <input type="text" id="setting-section" class="form-control" value="${user.classId || 'Sec-A'}" />
               </div>
             </div>
             <div style="display:flex; justify-content:flex-end;">
@@ -1870,6 +1683,8 @@ class RouterEngine {
     const name = document.getElementById('setting-name')?.value?.trim();
     const email = document.getElementById('setting-email')?.value?.trim();
     const mobile = document.getElementById('setting-mobile')?.value?.trim();
+    const branch = document.getElementById('setting-branch')?.value?.trim();
+    const classId = document.getElementById('setting-section')?.value?.trim();
 
     if (!name || !email || !mobile) {
       if (window.Notifications) Notifications.toast('Please enter valid profile details.', 'error');
@@ -1879,7 +1694,9 @@ class RouterEngine {
     const updatedUser = Storage.updateUserProfile(user.id, {
       name: name,
       email: email,
-      mobileNumber: mobile
+      mobileNumber: mobile,
+      branch: branch || user.branch || 'Computer Science',
+      classId: classId || user.classId || 'Sec-A'
     });
 
     if (window.Notifications) {

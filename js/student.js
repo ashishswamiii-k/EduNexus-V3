@@ -55,12 +55,9 @@ class StudentDashboardController {
               <h1 style="font-size:1.75rem; font-weight:800; color:var(--text-primary); margin:0;">
                 Welcome back, <span class="gradient-text">${user.name}</span> 👋
               </h1>
-              <button class="btn header-logout-btn" onclick="Auth.confirmLogout()" title="Log out of EduNexus" style="margin-top:0.15rem;">
-                🚪 Logout
-              </button>
             </div>
             <p style="font-size:0.875rem; color:var(--text-muted); margin-top:0.25rem;">
-              Roll No: <strong>${user.rollNumber || '0245'}</strong> • Computer Science & Engineering
+              Roll No: <strong>${user.rollNumber || '0245'}</strong> • ${user.branch || 'Computer Science & Engineering'}
             </p>
           </div>
 
@@ -139,7 +136,7 @@ class StudentDashboardController {
                     <span style="font-size:0.75rem; color:var(--accent-cyan); font-weight:700; text-transform:uppercase;">EduNexus Learning Intelligence</span>
                   </div>
                   <p style="font-size:0.9rem; color:var(--text-primary); font-weight:600; margin:0 0 0.4rem 0;">
-                    Good day, ${user.name}! You currently have <strong style="color:${weakCount > 0 ? '#EF4444' : '#10B981'};">${weakCount} topic${weakCount === 1 ? '' : 's'}</strong> requiring attention.
+                    Diagnostic Status: You currently have <strong style="color:${weakCount > 0 ? '#EF4444' : '#10B981'};">${weakCount} topic${weakCount === 1 ? '' : 's'}</strong> requiring attention.
                   </p>
                   <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">
                     Recommended Focus: <strong>${nexa && nexa.weakTopic ? nexa.weakTopic.name : 'DBMS Normalization'}</strong>. ${nexa ? nexa.recommendedAction : 'Complete current focus topic.'}

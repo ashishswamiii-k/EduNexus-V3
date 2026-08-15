@@ -35,8 +35,14 @@
     <!-- PERMANENT FIXED SIDEBAR WITH USER FOOTER -->
     <aside id="sidebar-container" class="app-sidebar">
       <div class="sidebar-header">
-        <a class="sidebar-brand magnetic-target" onclick="Router.navigate('/student')" title="EduNexus">
-          <img src="assets/logo.png" alt="EduNexus — Personalized Learning Platform" class="edunexus-logo-img sidebar-logo-img">
+        <a class="sidebar-brand magnetic-target" onclick="Router.navigateDashboard()" title="EduNexus">
+          <div class="sidebar-brand-logo-badge">
+            <img src="assets/logo.png" alt="EduNexus" class="edunexus-logo-img sidebar-logo-img">
+          </div>
+          <div class="sidebar-brand-text-container">
+            <span class="sidebar-brand-title">EduNexus</span>
+            <span class="sidebar-brand-tagline">Learn • Grow • Achieve</span>
+          </div>
         </a>
       </div>
 

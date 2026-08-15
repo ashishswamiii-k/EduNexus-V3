@@ -832,6 +832,125 @@ class StorageManager {
     return false;
   }
 
+  // TEACHER MODULE EXPANDED API
+  addClass(classObj) {
+    const db = this.getDb();
+    if (!db.classes) db.classes = [];
+    const newClass = {
+      id: classObj.id || 'CLS_' + Date.now(),
+      name: classObj.name || 'B.Tech CSE',
+      section: classObj.section || 'Sec-A',
+      studentCount: parseInt(classObj.studentCount) || 15,
+      description: classObj.description || 'Computer Science & Engineering',
+      createdAt: new Date().toISOString()
+    };
+    db.classes.push(newClass);
+    this.saveDb(db);
+    return newClass;
+  }
+
+  addSubject(subjectObj) {
+    const db = this.getDb();
+    if (!db.subjects) db.subjects = [];
+    const newSubject = {
+      id: subjectObj.id || 'SUB_' + Date.now(),
+      code: subjectObj.code || 'CS301',
+      name: subjectObj.name || 'New Subject',
+      semester: subjectObj.semester || 'Semester 3',
+      description: subjectObj.description || 'Core Computer Science Module',
+      credits: parseInt(subjectObj.credits) || 4,
+      createdAt: new Date().toISOString()
+    };
+    db.subjects.push(newSubject);
+    this.saveDb(db);
+    return newSubject;
+  }
+
+  addQuestion(qObj) {
+    const db = this.getDb();
+    if (!db.questions) db.questions = [];
+    const newQ = {
+      id: qObj.id || 'Q_' + Date.now(),
+      subjectId: qObj.subjectId || 'SUB_DBMS',
+      topicId: qObj.topicId || 'TOP_DBMS_NORM',
+      difficulty: qObj.difficulty || 'Medium',
+      question: qObj.question || 'Sample Question Text',
+      options: qObj.options || ['Option A', 'Option B', 'Option C', 'Option D'],
+      correctAnswer: parseInt(qObj.correctAnswer) || 0,
+      explanation: qObj.explanation || 'Solution explanation.',
+      attempts: qObj.attempts || 12,
+      accuracy: qObj.accuracy || 65,
+      createdAt: new Date().toISOString()
+    };
+    db.questions.push(newQ);
+    this.saveDb(db);
+    return newQ;
+  }
+
+  deleteQuestion(qId) {
+    const db = this.getDb();
+    if (!db.questions) return false;
+    db.questions = db.questions.filter(q => q.id !== qId);
+    this.saveDb(db);
+    return true;
+  }
+
+  addPushQuestion(pushObj) {
+    const db = this.getDb();
+    if (!db.pushedQuestions) db.pushedQuestions = [];
+    const newPush = {
+      id: pushObj.id || 'PUSH_' + Date.now(),
+      studentId: pushObj.studentId || 'ECB0245',
+      teacherId: pushObj.teacherId || 'ECB1234',
+      questionText: pushObj.questionText || 'Custom Teacher Question',
+      subjectName: pushObj.subjectName || 'Database Management Systems',
+      topicName: pushObj.topicName || 'DBMS Normalization',
+      difficulty: pushObj.difficulty || 'Medium',
+      explanation: pushObj.explanation || 'Instructor note on this targeted problem.',
+      deadline: pushObj.deadline || 'Tomorrow, 5:00 PM',
+      createdAt: new Date().toISOString(),
+      status: 'Assigned'
+    };
+    db.pushedQuestions.push(newPush);
+
+    // Also push to student's To-Do list
+    this.addTodoTask(newPush.studentId, {
+      title: `🎯 Teacher Question: ${newPush.topicName}`,
+      duration: '15 min',
+      priority: 'High',
+      isAiSuggested: true
+    });
+
+    this.saveDb(db);
+    return newPush;
+  }
+
+  getPushQuestions(studentId = 'ECB0245') {
+    const db = this.getDb();
+    if (!db.pushedQuestions) return [];
+    return db.pushedQuestions.filter(p => p.studentId.toLowerCase() === studentId.toLowerCase());
+  }
+
+  deleteIntervention(id) {
+    const db = this.getDb();
+    if (!db.interventions) return false;
+    db.interventions = db.interventions.filter(i => i.id !== id);
+    this.saveDb(db);
+    return true;
+  }
+
+  updateInterventionStatus(id, newStatus) {
+    const db = this.getDb();
+    if (!db.interventions) return null;
+    const item = db.interventions.find(i => i.id === id);
+    if (item) {
+      item.status = newStatus;
+      this.saveDb(db);
+      return item;
+    }
+    return null;
+  }
+
   // MINDFUL BREAK STORAGE API
   getMindfulHistory(studentId = 'ECB0245') {
     const u = this.getUserById(studentId);

@@ -30,31 +30,71 @@
 }
 
 .sidebar-header {
-  height: var(--header-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 1.25rem;
+  height: auto;
+  min-height: var(--header-height);
+  padding: 1.1rem 1.25rem 0.9rem 1.25rem;
   border-bottom: 1px solid var(--border-color);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
   transition: border-color 0.25s ease;
 }
 
 .sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.85rem;
   overflow: hidden;
   text-decoration: none;
   cursor: pointer;
 }
 
-.sidebar-brand img {
-  height: 38px;
+.sidebar-brand-logo-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(59, 130, 246, 0.15));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.sidebar-brand:hover .sidebar-brand-logo-badge {
+  transform: scale(1.04);
+  border-color: rgba(99, 102, 241, 0.6);
+}
+
+.sidebar-brand img,
+.sidebar-brand-logo-badge img {
+  height: 30px;
   width: auto;
-  min-width: 38px;
+  min-width: 28px;
   object-fit: contain;
-  transition: transform 0.25s ease;
+}
+
+.sidebar-brand-text-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-brand-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.sidebar-brand-tagline {
+  font-size: 0.725rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  margin-top: 0.15rem;
+  white-space: nowrap;
 }
 
 /* Sidebar Navigation Scrollable Area */
@@ -498,3 +538,467 @@
     display: inline;
   }
 }
+
+/* ============================================================
+   EDUNEXUS V3 — PRODUCTION TEACHER EDTECH DESIGN SYSTEM
+   MATCHING REFERENCE DESIGN (input_file_0.png)
+   ============================================================ */
+
+/* Teacher Gradient Active Sidebar Items */
+.app-sidebar .nav-item.active,
+.teacher-sidebar-item.active {
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35) !important;
+  font-weight: 600 !important;
+}
+
+.app-sidebar .nav-item.active i,
+.app-sidebar .nav-item.active .nav-icon {
+  color: #FFFFFF !important;
+}
+
+/* Sidebar Teacher Profile Card & Dark Switch Footer */
+.teacher-sidebar-user-card {
+  background: rgba(22, 28, 45, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.85rem;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.teacher-sidebar-user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3B82F6, #6366F1);
+  color: #FFFFFF;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+}
+
+/* Production EdTech Header Pill Widgets */
+.teacher-header-widget {
+  background: rgba(22, 28, 45, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.45rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  backdrop-filter: blur(8px);
+}
+
+.teacher-header-bell {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(22, 28, 45, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.teacher-header-bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-size: 0.65rem;
+  font-weight: 800;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #090D16;
+}
+
+/* Table Gradient Header matching reference image */
+.teacher-students-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.4rem;
+}
+
+.teacher-students-table thead tr {
+  background: linear-gradient(90deg, #6366F1 0%, #3B82F6 100%) !important;
+  color: #FFFFFF !important;
+  border-radius: 12px;
+}
+
+.teacher-students-table th {
+  padding: 0.85rem 1rem !important;
+  font-size: 0.825rem !important;
+  font-weight: 700 !important;
+  color: #FFFFFF !important;
+  text-align: left;
+  white-space: nowrap;
+  border: none !important;
+}
+
+.teacher-students-table th:first-child {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+
+.teacher-students-table th:last-child {
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.teacher-students-table tbody tr {
+  background: rgba(13, 17, 28, 0.6);
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.teacher-students-table tbody tr:hover {
+  background: rgba(30, 41, 67, 0.6);
+}
+
+.teacher-students-table td {
+  padding: 0.85rem 1rem !important;
+  vertical-align: middle !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.teacher-students-table td:first-child {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.teacher-students-table td:last-child {
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Student Avatar Initial Circle */
+.student-avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-right: 0.65rem;
+  flex-shrink: 0;
+}
+
+/* Risk Badges matching reference pills */
+.risk-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.685rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.risk-pill-low {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.risk-pill-medium {
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.risk-pill-high {
+  background: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* Row Action Buttons matching reference */
+.btn-action-ghost {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #E2E8F0 !important;
+  padding: 0.3rem 0.65rem !important;
+  border-radius: 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-action-ghost:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.btn-action-purple {
+  background: linear-gradient(135deg, #6366F1, #8B5CF6) !important;
+  border: none !important;
+  color: #FFFFFF !important;
+  padding: 0.3rem 0.65rem !important;
+  border-radius: 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-action-purple:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.5) !important;
+}
+
+.btn-action-blue {
+  background: linear-gradient(135deg, #3B82F6, #2563EB) !important;
+  border: none !important;
+  color: #FFFFFF !important;
+  padding: 0.3rem 0.65rem !important;
+  border-radius: 8px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-action-blue:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* ============================================================
+   TEACHER & ADMIN LIGHT MODE THEME OVERRIDES
+   ============================================================ */
+
+/* 1. Page Backgrounds & Base Text */
+[data-theme="light"] body {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .teacher-dashboard-page,
+[data-theme="light"] .admin-dashboard-page,
+[data-theme="light"] .teacher-students-page,
+[data-theme="light"] .admin-users-page,
+[data-theme="light"] .admin-students-page,
+[data-theme="light"] .admin-teachers-page,
+[data-theme="light"] .admin-institutes-page,
+[data-theme="light"] .admin-analytics-page,
+[data-theme="light"] .admin-settings-page {
+  background-color: #F8FAFC !important;
+  color: #0F172A !important;
+}
+
+/* 2. Light Mode Cards & Surfaces */
+[data-theme="light"] .card,
+[data-theme="light"] .card-gradient-border {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .card h1,
+[data-theme="light"] .card h2,
+[data-theme="light"] .card h3,
+[data-theme="light"] .card h4,
+[data-theme="light"] .card strong {
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .card p,
+[data-theme="light"] .card span,
+[data-theme="light"] .card div {
+  color: #334155;
+}
+
+/* 3. Light Mode Tables (Teacher & Admin) */
+[data-theme="light"] .teacher-students-table {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .teacher-students-table thead tr {
+  background: linear-gradient(90deg, #6366F1 0%, #3B82F6 100%) !important;
+}
+
+[data-theme="light"] .teacher-students-table th {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="light"] .teacher-students-table tbody tr {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+}
+
+[data-theme="light"] .teacher-students-table tbody tr:hover {
+  background: #F8FAFC !important;
+}
+
+[data-theme="light"] .teacher-students-table td {
+  color: #334155 !important;
+  border-color: #E2E8F0 !important;
+}
+
+[data-theme="light"] .teacher-students-table td strong {
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .teacher-students-table td code {
+  background: #F1F5F9 !important;
+  color: #334155 !important;
+  border: 1px solid #CBD5E1 !important;
+}
+
+/* 4. Light Mode Header Widgets & Bells */
+[data-theme="light"] .teacher-header-widget {
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .teacher-header-bell {
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+  color: #0F172A !important;
+}
+
+/* 5. Light Mode Buttons */
+[data-theme="light"] .btn-action-ghost {
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  color: #1E293B !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .btn-action-ghost:hover {
+  background: #F1F5F9 !important;
+  border-color: #94A3B8 !important;
+  color: #0F172A !important;
+}
+
+/* 6. Light Mode Risk Badges (Pills) */
+[data-theme="light"] .risk-pill-low {
+  background: #D1FAE5 !important;
+  color: #065F46 !important;
+  border: 1px solid #A7F3D0 !important;
+}
+
+[data-theme="light"] .risk-pill-medium {
+  background: #FEF3C7 !important;
+  color: #92400E !important;
+  border: 1px solid #FDE68A !important;
+}
+
+[data-theme="light"] .risk-pill-high {
+  background: #FEE2E2 !important;
+  color: #991B1B !important;
+  border: 1px solid #FCA5A5 !important;
+}
+
+/* 7. Light Mode Sidebar (Teacher & Admin) */
+[data-theme="light"] .app-sidebar[data-active-role="teacher"],
+[data-theme="light"] .app-sidebar[data-active-role="admin"] {
+  background: #FFFFFF !important;
+  border-right: 1px solid #E2E8F0 !important;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="light"] .app-sidebar[data-active-role="teacher"] .sidebar-brand-title,
+[data-theme="light"] .app-sidebar[data-active-role="admin"] .sidebar-brand-title {
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .app-sidebar[data-active-role="teacher"] .sidebar-brand-tagline,
+[data-theme="light"] .app-sidebar[data-active-role="admin"] .sidebar-brand-tagline {
+  color: #64748B !important;
+}
+
+[data-theme="light"] .app-sidebar[data-active-role="teacher"] .nav-item,
+[data-theme="light"] .app-sidebar[data-active-role="admin"] .nav-item {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .app-sidebar[data-active-role="teacher"] .nav-item:hover,
+[data-theme="light"] .app-sidebar[data-active-role="admin"] .nav-item:hover {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+
+[data-theme="light"] .app-sidebar[data-active-role="teacher"] .nav-item.active,
+[data-theme="light"] .app-sidebar[data-active-role="admin"] .nav-item.active {
+  background: linear-gradient(135deg, #6366F1, #8B5CF6) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+}
+
+/* 8. Light Mode Search & Form Inputs */
+[data-theme="light"] .form-control,
+[data-theme="light"] .form-select {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border: 1px solid #CBD5E1 !important;
+}
+
+[data-theme="light"] .form-control::placeholder {
+  color: #64748B !important;
+}
+
+/* 9. High-Contrast Weak Topic & Student ID Badges in Light Mode */
+.student-id-badge {
+  background: rgba(255, 255, 255, 0.06);
+  color: #CBD5E1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .student-id-badge {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+  border: 1px solid #CBD5E1 !important;
+  font-weight: 700 !important;
+}
+
+.weak-topic-text {
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .weak-topic-text {
+  color: #0F172A !important;
+  font-weight: 700 !important;
+}
+
+.progress-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .progress-track {
+  background: #E2E8F0 !important;
+}
+
+
