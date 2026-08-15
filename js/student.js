@@ -34,7 +34,7 @@ class StudentDashboardController {
     if (!container) container = document.getElementById('main-content');
     if (!container) return;
 
-    const user = Auth.getCurrentUser() || { name: 'Ashish Swami', rollNumber: '0245', id: 'ECB0245' };
+    const user = Auth.getCurrentUser() || { name: 'ASHISH', rollNumber: '0245', id: 'ECB0245' };
     const subjects = Storage.getSubjects();
     const performance = Storage.getPerformance(user.id);
     const weeklyData = AIEngine.getWeeklyAnalysis(user.id);

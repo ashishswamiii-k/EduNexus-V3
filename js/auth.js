@@ -88,11 +88,13 @@ class AuthManager {
     let user = Storage.getUserById(cleanId);
 
     if (!user || user.role.toLowerCase() !== cleanRole) {
-      // Create a prototype session user object with the typed identifier
+      const defaultName = (cleanId === '0245' || cleanId.toUpperCase() === 'ECB0245' || cleanId.toUpperCase() === 'DEMO0245') ? 'ASHISH' : cleanId;
       user = {
         id: cleanId,
-        name: cleanId,
+        name: defaultName,
         role: cleanRole,
+        email: `${cleanId.toLowerCase()}@edunexus.edu`,
+        mobileNumber: '+91 9876543210',
         schoolCode: 'ECB',
         institution: 'Engineering College Bikaner',
         rollNumber: cleanId.replace(/\D/g, '') || '0245',
@@ -105,6 +107,7 @@ class AuthManager {
         mindfulHistory: [],
         mindfulXP: 0
       };
+      Storage.addUser(user);
     }
 
     this.setCurrentUser(user);

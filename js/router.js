@@ -163,16 +163,35 @@ class RouterEngine {
     });
   }
 
+  getInitials(name) {
+    if (!name || typeof name !== 'string') return 'U';
+    const cleanStr = name.trim();
+    if (!cleanStr) return 'U';
+    const parts = cleanStr.split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    if (cleanStr.length >= 2) {
+      return cleanStr.slice(0, 2).toUpperCase();
+    }
+    return cleanStr.toUpperCase();
+  }
+
   updateProfileElements(user) {
+    if (!user && window.Auth) user = Auth.getCurrentUser();
+    if (!user) return;
+
     const avatar = document.getElementById('sidebar-user-avatar');
     const userName = document.getElementById('sidebar-user-name');
     const userRole = document.getElementById('sidebar-user-role');
+    const headerUserName = document.getElementById('header-user-name');
 
     const roleName = user.role ? (user.role.toLowerCase() === 'admin' ? 'ADMINISTRATOR' : user.role.toUpperCase()) : 'STUDENT';
 
-    if (avatar && user.name) avatar.textContent = user.name.charAt(0).toUpperCase();
-    if (userName) userName.textContent = user.name || 'User';
+    if (avatar) avatar.textContent = this.getInitials(user.name);
+    if (userName) userName.textContent = user.name || user.id || 'User';
     if (userRole) userRole.textContent = roleName;
+    if (headerUserName) headerUserName.textContent = user.name || 'Profile';
 
     if (this.currentRoute === '/student' && window.StudentDashboard) {
       StudentDashboard.render();
@@ -1502,14 +1521,31 @@ class RouterEngine {
     const user = Auth.getCurrentUser();
     if (!user) return;
 
-    const name = document.getElementById('setting-name')?.value;
-    const email = document.getElementById('setting-email')?.value;
-    const mobile = document.getElementById('setting-mobile')?.value;
+    const name = document.getElementById('setting-name')?.value?.trim();
+    const email = document.getElementById('setting-email')?.value?.trim();
+    const mobile = document.getElementById('setting-mobile')?.value?.trim();
 
-    if (!name || !email || !mobile) return;
+    if (!name || !email || !mobile) {
+      if (window.Notifications) Notifications.toast('Please enter valid profile details.', 'error');
+      return;
+    }
 
-    Storage.updateUserProfile(user.id, { name, email, mobileNumber: mobile });
-    if (window.Notifications) Notifications.toast('Profile updated globally across EduNexus!', 'success');
+    const updatedUser = Storage.updateUserProfile(user.id, {
+      name: name,
+      email: email,
+      mobileNumber: mobile
+    });
+
+    if (window.Notifications) {
+      Notifications.toast('✓ Profile updated successfully', 'success');
+    }
+
+    const activeUser = Auth.getCurrentUser() || updatedUser;
+    this.updateProfileElements(activeUser);
+
+    if (this.currentRoute === '/settings') {
+      this.renderSettings();
+    }
   }
 
   renderTerms() {

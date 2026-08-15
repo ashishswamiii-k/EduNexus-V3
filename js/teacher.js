@@ -92,7 +92,7 @@ class TeacherViewController {
               </thead>
               <tbody id="teacher-roster-tbody">
                 <tr>
-                  <td><strong>Ashish Swami</strong></td>
+                  <td><strong>${(Storage.getUserById('ECB0245') || Storage.getUserById('0245') || { name: 'ASHISH' }).name}</strong></td>
                   <td>ECB0245</td>
                   <td><span class="text-danger font-bold">48%</span></td>
                   <td>DBMS Normalization</td>

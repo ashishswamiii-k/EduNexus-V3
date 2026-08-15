@@ -17,10 +17,10 @@ const DEFAULT_DEMO_DATA = {
     },
     {
       id: 'DEMO0245',
-      name: 'Demo Student',
+      name: 'ASHISH',
       role: 'student',
       password: 'student123',
-      email: 'demo.student@edunexus.edu',
+      email: 'ashish.swami@edunexus.edu',
       mobileNumber: '+91 9876543210',
       schoolCode: 'DEMO',
       institution: 'EduNexus Academy',
@@ -40,7 +40,30 @@ const DEFAULT_DEMO_DATA = {
     },
     {
       id: 'ECB0245',
-      name: 'Ashish Swami',
+      name: 'ASHISH',
+      role: 'student',
+      password: 'student123',
+      email: 'ashish.swami@edunexus.edu',
+      mobileNumber: '+91 9876543210',
+      schoolCode: 'ECB',
+      institution: 'Engineering College Bikaner',
+      rollNumber: '0245',
+      branch: 'Computer Science',
+      year: 'Undergraduate',
+      semester: 'Semester 3',
+      classId: 'Sec-A',
+      streakDays: 7,
+      achievements: ['first_quiz', 'streak_5', 'topic_master', 'mindful_learner'],
+      mindfulHistory: [
+        { id: 'MB_01', date: '2026-08-12', gameName: 'Memory Match', accuracy: 88, focusScore: 92, xpEarned: 20 },
+        { id: 'MB_02', date: '2026-08-13', gameName: 'Focus Tap', accuracy: 95, focusScore: 94, xpEarned: 20 },
+        { id: 'MB_03', date: '2026-08-14', gameName: 'Pattern Recall', accuracy: 84, focusScore: 88, xpEarned: 20 }
+      ],
+      mindfulXP: 60
+    },
+    {
+      id: '0245',
+      name: 'ASHISH',
       role: 'student',
       password: 'student123',
       email: 'ashish.swami@edunexus.edu',
@@ -449,27 +472,33 @@ class StorageManager {
 
   updateUserProfile(userId, updatedData) {
     const db = this.getDb();
-    const u = db.users.find(x => x.id.toLowerCase() === userId.toLowerCase());
+    if (!db.users) db.users = [];
+    let u = db.users.find(x => x.id.toLowerCase() === userId.toLowerCase());
+    
     if (u) {
       Object.assign(u, updatedData);
-      this.saveDb(db);
-
-      // Sync active session user if IDs match
-      if (window.Auth && typeof Auth.getCurrentUser === 'function') {
-        const current = Auth.getCurrentUser();
-        if (current && current.id.toLowerCase() === userId.toLowerCase()) {
-          const updatedCurrent = Object.assign({}, current, updatedData);
-          Auth.setCurrentUser(updatedCurrent);
-        }
-      }
-
-      // Dispatch real-time global event
-      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-        window.dispatchEvent(new CustomEvent('edunexus:profile-updated', { detail: u }));
-      }
-      return u;
+    } else {
+      const current = (window.Auth && typeof Auth.getCurrentUser === 'function') ? Auth.getCurrentUser() : null;
+      u = Object.assign({ id: userId }, current || {}, updatedData);
+      db.users.push(u);
     }
-    return null;
+    
+    this.saveDb(db);
+
+    // Sync active session user in localStorage
+    if (window.Auth && typeof Auth.getCurrentUser === 'function') {
+      const current = Auth.getCurrentUser();
+      if (current && current.id.toLowerCase() === userId.toLowerCase()) {
+        const updatedCurrent = Object.assign({}, current, updatedData);
+        Auth.setCurrentUser(updatedCurrent);
+      }
+    }
+
+    // Dispatch real-time global event
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('edunexus:profile-updated', { detail: u }));
+    }
+    return u;
   }
 
   getClasses() { return this.getDb().classes || []; }
